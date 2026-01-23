@@ -5,7 +5,7 @@ type SliderItemProps = {
   width: number;
 };
 
-const SliderItem = async ({ children, width }: SliderItemProps) => {
+const SliderItem = ({ children, width }: SliderItemProps) => {
   return (
     <div
       className="inline-flex justify-center items-center mx-4"

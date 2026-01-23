@@ -6,7 +6,7 @@ type MemberProps = {
   socialId: string;
 };
 
-const Member = async ({ name, image, socialId }: MemberProps) => {
+const Member = ({ name, image, socialId }: MemberProps) => {
   return (
     <div>
       <Image src={image} width={1200} height={1400} alt={name} />

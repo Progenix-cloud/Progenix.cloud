@@ -9,15 +9,14 @@ import MoFace from "public/team/mo-face.svg";
 import EricFace from "public/team/eric-face.svg";
 import MateiFace from "public/team/matei-face.svg";
 import ViktoriaFace from "public/team/viktoria-face.svg";
+import { description } from "constants/app/landing";
 
-const AboutTeam = async () => {
+const AboutTeam = () => {
   return (
     <section className="bg-white text-black text-3xl flex flex-col py-10 md:py-20">
       <div className="container mx-auto px-11">
         <p className="text-3xl leading-tight tracking-tight mx-auto lg:text-4xl">
-          <strong>We will help you ship better apps, faster.</strong> Our team
-          of expert engineers has created the best user experiences in some of
-          the most popular apps worldwide.
+          <strong>{description.split('.')[0]}.</strong> {description.split('.')[1]}
         </p>
       </div>
       <div className="container text-center mx-auto">

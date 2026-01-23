@@ -2,7 +2,6 @@
   "name": "software-agency-website",
   "version": "0.1.0",
   "private": true,
-  "author": "Danial Khakbaz<danialkhakbaz.dk@gmail.com>",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,9 +14,12 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "framer-motion": "^12.29.0",
     "next": "14.1.0",
     "react": "^18",
-    "react-dom": "^18"
+    "react-countup": "^6.5.3",
+    "react-dom": "^18",
+    "react-intersection-observer": "^10.0.2"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^14.1.0",

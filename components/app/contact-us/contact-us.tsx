@@ -1,7 +1,7 @@
 import Image from "next/image";
 import MargeloImage from "public/margelo-logo.svg";
 
-const ContactUs = async () => {
+const ContactUs = () => {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-content items-center py-6 lg:py-6">
       <div className="flex flex-1 flex-col justify-center items-center">

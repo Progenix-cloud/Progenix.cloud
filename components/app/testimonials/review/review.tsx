@@ -5,7 +5,7 @@ type ReviewProps = {
   by: string;
 };
 
-const Review = async ({ children, by }: ReviewProps) => {
+const Review = ({ children, by }: ReviewProps) => {
   return (
     <div className="flex flex-col justify-center text-center px-5 md:px-10 lg:px-20">
       <div className="text-xl leading-10 tracking-tight md:text-2xl lg:leading-[3rem]">
