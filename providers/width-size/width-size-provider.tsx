@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { WidthSizeContext } from "providers/width-size/width-size-context";
 
 type WidthSizeType = {
@@ -9,19 +9,22 @@ type WidthSizeType = {
 
 const WidthSizeProvider = ({ children }: WidthSizeType) => {
   const [widthSize, setWidthSize] = useState<number>(0);
-
-  const handleResize = useCallback(() => {
-    setWidthSize(window.innerWidth);
-  }, []);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    document.addEventListener("resize", handleResize, { passive: true });
+    setIsClient(true);
+    setWidthSize(window.innerWidth);
 
-    return () => document.removeEventListener("resize", handleResize);
-  }, [handleResize]);
+    const handleResize = () => {
+      setWidthSize(window.innerWidth);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <WidthSizeContext.Provider value={{ widthSize }}>
+    <WidthSizeContext.Provider value={{ widthSize: isClient ? widthSize : 0 }}>
       {children}
     </WidthSizeContext.Provider>
   );

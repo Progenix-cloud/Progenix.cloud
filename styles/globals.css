@@ -2,15 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
+/* Design tokens as CSS variables */
 :root {
-  background-color: white;
+  --border: #e6e6e6;
+  --input: #ffffff;
+  --ring: #93c5fd;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #6b7280;
+  --destructive: #ef4444;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #06b6d4;
+  --popover: #ffffff;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.dark {
+  --border: #2b2b2b;
+  --input: #111827;
+  --ring: #1e3a8a;
+  --background: #000000;
+  --foreground: #e6eef8;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #9ca3af;
+  --destructive: #f87171;
+  --muted: #111827;
+  --muted-foreground: #9ca3af;
+  --accent: #06b6d4;
+  --popover: #0b1220;
+  --card: #0b1220;
+  --card-foreground: #e6eef8;
+
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 /* Custom animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -25,7 +67,8 @@ html,
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {

@@ -4,10 +4,10 @@ type ScrollContextType = {
   scroll: number;
 };
 
-const ScrollContextdefaultValue: ScrollContextType = {
+const scrollContextDefaultValue: ScrollContextType = {
   scroll: 0,
 };
 
-export const ScrollContext = createContext(ScrollContextdefaultValue);
+export const ScrollContext = createContext(scrollContextDefaultValue);
 
 export const useScrollContext = () => useContext(ScrollContext);

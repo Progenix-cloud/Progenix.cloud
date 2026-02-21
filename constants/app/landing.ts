@@ -1,6 +1,6 @@
-export const companyName = "Your Company Name";
+export const companyName = "progenix.cloud";
 
-export const taglineSuffix = "done right";
+export const taglineSuffix = "technology that propels your business forward";
 
 export const taglinePrefixes = [
   "web products",

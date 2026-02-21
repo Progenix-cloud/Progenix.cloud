@@ -6,7 +6,30 @@ const config: Config = {
     "./components/**/*.{ts,tsx}",
     "./layout/**/*.{ts,tsx}",
   ],
-  theme: {},
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: "var(--secondary)",
+        destructive: "var(--destructive)",
+        muted: "var(--muted)",
+        "muted-foreground": "var(--muted-foreground)",
+        accent: "var(--accent)",
+        popover: "var(--popover)",
+        card: "var(--card)",
+        "card-foreground": "var(--card-foreground)",
+      },
+    },
+  },
   plugins: [],
 };
 export default config;
