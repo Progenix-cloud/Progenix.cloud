@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React from "react"
+import React from "react";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AdminSidebar } from '@/components/admin/sidebar';
-import { AdminHeader } from '@/components/admin/header';
-import { Spinner } from '@/components/ui/spinner';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AdminSidebar } from "@/components/admin/sidebar";
+import { QuickActionsButton } from "@/components/admin/quick-actions";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function AdminLayout({
   children,
@@ -20,36 +20,36 @@ export default function AdminLayout({
   useEffect(() => {
     const verifyAuth = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-        const userStr = localStorage.getItem('user');
+        const token = localStorage.getItem("authToken");
+        const userStr = localStorage.getItem("user");
 
         if (!token || !userStr) {
-          router.push('/auth/login');
+          router.push("/auth/login");
           return;
         }
 
         const user = JSON.parse(userStr);
 
         // Check if user is admin (not client)
-        if (user.role === 'client') {
-          router.push('/client/dashboard');
+        if (user.role === "client") {
+          router.push("/client/dashboard");
           return;
         }
 
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/auth/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
         });
 
         if (response.ok) {
           setIsAuthorized(true);
         } else {
-          router.push('/auth/login');
+          router.push("/auth/login");
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
-        router.push('/auth/login');
+        console.error("Auth check failed:", error);
+        router.push("/auth/login");
       } finally {
         setIsLoading(false);
       }
@@ -74,11 +74,10 @@ export default function AdminLayout({
     <div className="flex h-screen bg-background">
       <AdminSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
+
+      <QuickActionsButton />
     </div>
   );
 }

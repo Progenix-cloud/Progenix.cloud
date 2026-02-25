@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, Calendar, Briefcase } from "lucide-react";
+import { Mail, Phone, Calendar } from "lucide-react";
 import { apiService } from "@/lib/api-service";
 
 interface TeamMember {

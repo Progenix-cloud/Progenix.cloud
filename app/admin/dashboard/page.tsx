@@ -14,7 +14,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -70,54 +69,76 @@ export default function AdminDashboardPage() {
   const [supportMessage, setSupportMessage] = useState("");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome to your admin dashboard</p>
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Dashboard
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mt-2">
+          Welcome to your admin dashboard
+        </p>
       </div>
 
       {/* Top Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
+        <Card className="p-4 border-0 shadow-sm hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                 Total Team Members
               </p>
-              <p className="text-2xl font-bold">24</p>
-            </div>
-            <Users className="h-8 w-8 text-blue-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">
-                Today's Attendance
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                24
               </p>
-              <p className="text-2xl font-bold">20/24</p>
             </div>
-            <CheckCircle className="h-8 w-8 text-green-500" />
+            <div className="h-12 w-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+              <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 border-0 shadow-sm hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Today&apos;s Attendance
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                20/24
+              </p>
+            </div>
+            <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+              <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4 border-0 shadow-sm hover:shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                 Scheduled Meetings
               </p>
-              <p className="text-2xl font-bold">4</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                4
+              </p>
             </div>
-            <Calendar className="h-8 w-8 text-purple-500" />
+            <div className="h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </div>
           </div>
         </Card>
-        <Card className="p-4">
+        <Card className="p-4 border-0 shadow-sm hover:shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Active Goals</p>
-              <p className="text-2xl font-bold">3</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Active Goals
+              </p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                3
+              </p>
             </div>
-            <Target className="h-8 w-8 text-orange-500" />
+            <div className="h-12 w-12 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center">
+              <Target className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+            </div>
           </div>
         </Card>
       </div>
@@ -125,10 +146,11 @@ export default function AdminDashboardPage() {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar & Schedule */}
-        <Card className="lg:col-span-1">
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5" /> Calendar
+        <Card className="lg:col-span-1 border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Calendar
             </h2>
           </div>
           <div className="p-6">
@@ -136,13 +158,17 @@ export default function AdminDashboardPage() {
               {mockScheduleData.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex justify-between items-center p-3 bg-accent/10 rounded-lg"
+                  className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
                   <div>
-                    <p className="font-medium text-sm">{item.time}</p>
-                    <p className="text-xs text-muted-foreground">{item.task}</p>
+                    <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                      {item.time}
+                    </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {item.task}
+                    </p>
                   </div>
-                  <Badge variant="outline">{item.attendees}</Badge>
+                  <Badge variant="secondary">{item.attendees}</Badge>
                 </div>
               ))}
             </div>
@@ -150,10 +176,11 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Moody Board */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Smile className="h-5 w-5" /> Team Mood
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <Smile className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Team Mood
             </h2>
           </div>
           <div className="p-6">
@@ -180,14 +207,16 @@ export default function AdminDashboardPage() {
                   key={idx}
                   className="flex justify-between items-center text-xs"
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                     <div
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: item.fill }}
                     />
                     {item.mood}
                   </span>
-                  <span className="font-semibold">{item.value}%</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {item.value}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -195,10 +224,11 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Attendance */}
-        <Card className="lg:col-span-1">
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Users className="h-5 w-5" /> Attendance
+        <Card className="lg:col-span-1 border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Attendance
             </h2>
           </div>
           <div className="p-6">
@@ -219,28 +249,29 @@ export default function AdminDashboardPage() {
       {/* Second Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Anonymous Feedback */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" /> Anonymous Feedback
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Anonymous Feedback
             </h2>
           </div>
           <div className="p-6 space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
+            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-900">
+              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200">
                 Recent Feedback:
               </p>
               <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
                 Great communication and teamwork this week! 👍
               </p>
             </div>
-            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-              <p className="text-sm font-medium text-green-900 dark:text-green-200">
+            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-900">
+              <p className="text-sm font-semibold text-green-900 dark:text-green-200">
                 Team feels motivated about new projects
               </p>
             </div>
-            <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg">
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+            <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg border border-amber-200 dark:border-amber-900">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
                 Need better communication on deadlines
               </p>
             </div>
@@ -257,31 +288,32 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Support */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" /> Support
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <AlertCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Support
             </h2>
           </div>
           <div className="p-6 space-y-4">
-            <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
-              <p className="text-sm font-medium text-red-900 dark:text-red-200">
+            <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border border-red-200 dark:border-red-900">
+              <p className="text-sm font-semibold text-red-900 dark:text-red-200">
                 Urgent: System Maintenance
               </p>
               <p className="text-xs text-red-700 dark:text-red-300 mt-1">
                 Scheduled for Mar 15, 2:00 AM
               </p>
             </div>
-            <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg">
-              <p className="text-sm font-medium text-yellow-900 dark:text-yellow-200">
+            <div className="bg-yellow-50 dark:bg-yellow-950/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-900">
+              <p className="text-sm font-semibold text-yellow-900 dark:text-yellow-200">
                 Reminder: Update Your Profile
               </p>
               <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
                 Complete your profile information
               </p>
             </div>
-            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-              <p className="text-sm font-medium text-green-900 dark:text-green-200">
+            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-900">
+              <p className="text-sm font-semibold text-green-900 dark:text-green-200">
                 New Feature Released
               </p>
               <p className="text-xs text-green-700 dark:text-green-300 mt-1">
@@ -304,23 +336,29 @@ export default function AdminDashboardPage() {
       {/* Third Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Goals */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Target className="h-5 w-5" /> Goals
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Goals
             </h2>
           </div>
           <div className="p-6 space-y-4">
             {mockGoals.map((goal, idx) => (
               <div key={idx} className="space-y-2">
                 <div className="flex justify-between items-start">
-                  <p className="font-medium text-sm">{goal.title}</p>
-                  <Badge variant="outline" className="text-xs">
+                  <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                    {goal.title}
+                  </p>
+                  <Badge variant="secondary" className="text-xs">
                     {goal.dueDate}
                   </Badge>
                 </div>
-                <Progress value={goal.progress} className="h-2" />
-                <p className="text-xs text-muted-foreground">
+                <Progress
+                  value={goal.progress}
+                  className="h-2 bg-gray-200 dark:bg-gray-700"
+                />
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   {goal.progress}% Complete
                 </p>
               </div>
@@ -329,10 +367,11 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Analytics */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" /> Analytics
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Analytics
             </h2>
           </div>
           <div className="p-6">
@@ -352,7 +391,7 @@ export default function AdminDashboardPage() {
                 <Line
                   type="monotone"
                   dataKey="performance"
-                  stroke="#3b82f6"
+                  stroke="#8b5cf6"
                   strokeWidth={2}
                 />
               </LineChart>
@@ -361,24 +400,27 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* My Schedule */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Clock className="h-5 w-5" /> My Schedule
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <Clock className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              My Schedule
             </h2>
           </div>
           <div className="p-6 space-y-3">
             {mockScheduleData.slice(0, 3).map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-start gap-3 pb-3 border-b last:border-b-0"
+                className="flex items-start gap-3 pb-3 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
               >
-                <div className="text-xs font-semibold text-primary min-w-16">
+                <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 min-w-16">
                   {item.time}
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-sm">{item.task}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                    {item.task}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {item.attendees} attendees
                   </p>
                 </div>
@@ -391,17 +433,20 @@ export default function AdminDashboardPage() {
       {/* Fourth Row - Meetings Partition & Global Chat */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Meets Partition */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Video className="h-5 w-5" /> Meets Partition
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <Video className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Meets Partition
             </h2>
           </div>
           <div className="p-6 space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg flex items-center justify-between">
+            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-900 flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">Engineering Team</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                  Engineering Team
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   8 members online
                 </p>
               </div>
@@ -409,10 +454,12 @@ export default function AdminDashboardPage() {
                 Join
               </Button>
             </div>
-            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg flex items-center justify-between">
+            <div className="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border border-green-200 dark:border-green-900 flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">Product Meeting</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                  Product Meeting
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   5 members online
                 </p>
               </div>
@@ -420,10 +467,12 @@ export default function AdminDashboardPage() {
                 Join
               </Button>
             </div>
-            <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg flex items-center justify-between">
+            <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-900 flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm">Client Presentation</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                  Client Presentation
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   3 members online
                 </p>
               </div>
@@ -435,10 +484,11 @@ export default function AdminDashboardPage() {
         </Card>
 
         {/* Global Chat */}
-        <Card>
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <MessageCircle className="h-5 w-5" /> Global Chat
+        <Card className="border-0 shadow-sm">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+              <MessageCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />{" "}
+              Global Chat
             </h2>
           </div>
           <div className="p-6 space-y-4 max-h-80 overflow-y-auto">
@@ -447,8 +497,10 @@ export default function AdminDashboardPage() {
                 JD
               </div>
               <div>
-                <p className="font-medium text-sm">John Doe</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                  John Doe
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Great work on the new design! 🎨
                 </p>
               </div>
@@ -458,8 +510,10 @@ export default function AdminDashboardPage() {
                 SM
               </div>
               <div>
-                <p className="font-medium text-sm">Sarah Miller</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                  Sarah Miller
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Thanks! Ready for the presentation
                 </p>
               </div>
@@ -469,16 +523,18 @@ export default function AdminDashboardPage() {
                 AJ
               </div>
               <div>
-                <p className="font-medium text-sm">Alex Johnson</p>
-                <p className="text-xs text-muted-foreground">
-                  Let's schedule a sync tomorrow
+                <p className="font-semibold text-sm text-gray-900 dark:text-white">
+                  Alex Johnson
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Let&apos;s schedule a sync tomorrow
                 </p>
               </div>
             </div>
-            <div className="flex gap-2 mt-4 pt-4 border-t">
+            <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <Input placeholder="Type a message..." className="text-xs" />
               <Button size="sm" variant="ghost">
-                <Send className="h-4 w-4" />
+                <Send className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               </Button>
             </div>
           </div>

@@ -1,12 +1,11 @@
-'use client';
+"use client";
 
-import React from "react"
+import React from "react";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ClientSidebar } from '@/components/client/sidebar';
-import { ClientHeader } from '@/components/client/header';
-import { Spinner } from '@/components/ui/spinner';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { ClientSidebar } from "@/components/client/sidebar";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function ClientLayout({
   children,
@@ -20,36 +19,36 @@ export default function ClientLayout({
   useEffect(() => {
     const verifyAuth = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-        const userStr = localStorage.getItem('user');
+        const token = localStorage.getItem("authToken");
+        const userStr = localStorage.getItem("user");
 
         if (!token || !userStr) {
-          router.push('/auth/login');
+          router.push("/auth/login");
           return;
         }
 
         const user = JSON.parse(userStr);
 
         // Check if user is client
-        if (user.role !== 'client') {
-          router.push('/admin/dashboard');
+        if (user.role !== "client") {
+          router.push("/admin/dashboard");
           return;
         }
 
-        const response = await fetch('/api/auth/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        const response = await fetch("/api/auth/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
         });
 
         if (response.ok) {
           setIsAuthorized(true);
         } else {
-          router.push('/auth/login');
+          router.push("/auth/login");
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
-        router.push('/auth/login');
+        console.error("Auth check failed:", error);
+        router.push("/auth/login");
       } finally {
         setIsLoading(false);
       }
@@ -74,10 +73,7 @@ export default function ClientLayout({
     <div className="flex h-screen bg-background">
       <ClientSidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <ClientHeader />
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto">{children}</main>
       </div>
     </div>
   );

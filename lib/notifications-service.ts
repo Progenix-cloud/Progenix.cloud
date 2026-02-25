@@ -1,8 +1,19 @@
-// Real-time notifications service
+// Notifications service (DB-backed)
+import { db } from "./db";
+import { notificationsBus } from "./notifications-bus";
+
 export interface Notification {
   id: string;
   userId: string;
-  type: 'project' | 'task' | 'meeting' | 'message' | 'approval' | 'deadline' | 'mention';
+  type:
+    | "project"
+    | "task"
+    | "meeting"
+    | "message"
+    | "approval"
+    | "deadline"
+    | "mention"
+    | "system";
   title: string;
   message: string;
   read: boolean;
@@ -25,183 +36,204 @@ export interface NotificationPreference {
   };
 }
 
-// In-memory notification store (for mock/demo)
-const notificationStore = new Map<string, Notification[]>();
-const preferenceStore = new Map<string, NotificationPreference>();
-
 export const notificationsService = {
-  // Create notification
-  createNotification: async (notification: Omit<Notification, 'id' | 'createdAt'>): Promise<Notification> => {
-    const id = `notif-${Date.now()}-${Math.random()}`;
-    const fullNotification: Notification = {
-      ...notification,
-      id,
-      createdAt: new Date(),
-    };
-
-    if (!notificationStore.has(notification.userId)) {
-      notificationStore.set(notification.userId, []);
-    }
-
-    notificationStore.get(notification.userId)!.push(fullNotification);
-    console.log('[v0] Notification created:', fullNotification);
-
-    // Trigger webhook if email enabled
-    await notificationsService.sendNotification(fullNotification);
-
-    return fullNotification;
-  },
-
-  // Get notifications for user
-  getUserNotifications: async (userId: string, unreadOnly = false): Promise<Notification[]> => {
-    let notifications = notificationStore.get(userId) || [];
-    if (unreadOnly) {
-      notifications = notifications.filter(n => !n.read);
-    }
-    return notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  },
-
-  // Mark as read
-  markAsRead: async (notificationId: string): Promise<boolean> => {
-    for (const [, notifications] of notificationStore) {
-      const notif = notifications.find(n => n.id === notificationId);
-      if (notif) {
-        notif.read = true;
-        return true;
-      }
-    }
-    return false;
-  },
-
-  // Mark all as read for user
-  markAllAsRead: async (userId: string): Promise<number> => {
-    const notifications = notificationStore.get(userId) || [];
-    let count = 0;
-    notifications.forEach(n => {
-      if (!n.read) {
-        n.read = true;
-        count++;
-      }
+  // Create a notification and persist
+  createNotification: async (
+    notification: Omit<Notification, "id" | "createdAt">
+  ): Promise<Notification> => {
+    const saved = await db.createNotification({
+      userId: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      read: notification.read || false,
+      actionUrl: notification.actionUrl,
+      actionData: notification.actionData || {},
     });
-    return count;
-  },
 
-  // Delete notification
-  deleteNotification: async (notificationId: string): Promise<boolean> => {
-    for (const [userId, notifications] of notificationStore) {
-      const index = notifications.findIndex(n => n.id === notificationId);
-      if (index > -1) {
-        notifications.splice(index, 1);
-        return true;
-      }
+    const result: Notification = {
+      id: (saved as any)._id,
+      userId: saved.userId,
+      type: saved.type,
+      title: saved.title,
+      message: saved.message,
+      read: saved.read,
+      createdAt: saved.createdAt,
+      actionUrl: saved.actionUrl,
+      actionData: saved.actionData || {},
+    };
+
+    // Trigger delivery hooks (email/push) after persist
+    await notificationsService.sendNotification(result);
+    // publish to SSE subscribers
+    try {
+      notificationsBus.publish(result.userId, result);
+    } catch (e) {
+      console.error("Failed to publish notification to bus", e);
     }
-    return false;
+    return result;
   },
 
-  // Set notification preferences
-  setPreferences: async (userId: string, preferences: Partial<NotificationPreference>): Promise<NotificationPreference> => {
-    const existing = preferenceStore.get(userId) || {
-      userId,
-      email: true,
-      push: true,
-      inApp: true,
-      channels: {
-        projects: true,
-        tasks: true,
-        meetings: true,
-        messages: true,
-        approvals: true,
-      },
-    };
-
-    const updated = { ...existing, ...preferences };
-    preferenceStore.set(userId, updated);
-    return updated;
+  getUserNotifications: async (
+    userId: string,
+    unreadOnly = false
+  ): Promise<Notification[]> => {
+    const rows: any[] = await db.getUserNotifications(userId, unreadOnly);
+    return rows.map((r) => ({
+      id: r._id,
+      userId: r.userId,
+      type: r.type,
+      title: r.title,
+      message: r.message,
+      read: r.read,
+      createdAt: r.createdAt,
+      actionUrl: r.actionUrl,
+      actionData: r.actionData || {},
+    }));
   },
 
-  // Get notification preferences
+  markAsRead: async (notificationId: string): Promise<boolean> => {
+    return db.markAsRead(notificationId);
+  },
+
+  markAllAsRead: async (userId: string): Promise<number> => {
+    return db.markAllAsRead(userId);
+  },
+
+  deleteNotification: async (notificationId: string): Promise<boolean> => {
+    const res = await db.deleteNotification(notificationId);
+    return !!res;
+  },
+
+  // Preferences persisted in DB
+  setPreferences: async (
+    userId: string,
+    preferences: Partial<NotificationPreference>
+  ): Promise<NotificationPreference> => {
+    const updated = await db.setPreferences(userId, preferences);
+    return updated as NotificationPreference;
+  },
+
   getPreferences: async (userId: string): Promise<NotificationPreference> => {
-    return preferenceStore.get(userId) || {
-      userId,
-      email: true,
-      push: true,
-      inApp: true,
-      channels: {
-        projects: true,
-        tasks: true,
-        meetings: true,
-        messages: true,
-        approvals: true,
-      },
-    };
+    const pref = await db.getPreferences(userId);
+    return pref as NotificationPreference;
   },
 
-  // Send notification (webhook integration point)
   sendNotification: async (notification: Notification): Promise<boolean> => {
     try {
-      const preferences = await notificationsService.getPreferences(notification.userId);
+      const preferences = await notificationsService.getPreferences(
+        notification.userId
+      );
 
-      // Check if user wants this type of notification
-      if (!preferences.inApp) {
-        return false;
-      }
+      if (!preferences.inApp) return false;
 
-      // Send email if enabled and configured
-      if (preferences.email && process.env.ENABLE_EMAIL_NOTIFICATIONS === 'true') {
+      if (
+        preferences.email &&
+        process.env.ENABLE_EMAIL_NOTIFICATIONS === "true"
+      ) {
         await notificationsService.sendEmail(notification);
       }
 
-      // Send push if enabled
-      if (preferences.push && process.env.ENABLE_PUSH_NOTIFICATIONS === 'true') {
+      if (
+        preferences.push &&
+        process.env.ENABLE_PUSH_NOTIFICATIONS === "true"
+      ) {
         await notificationsService.sendPush(notification);
       }
 
       return true;
     } catch (error) {
-      console.error('[v0] Failed to send notification:', error);
+      console.error("[db] Failed to send notification:", error);
       return false;
     }
   },
 
-  // Email sending (integration point with email service)
   sendEmail: async (notification: Notification): Promise<boolean> => {
     try {
-      // This would integrate with your email service (SendGrid, Mailgun, etc.)
-      console.log('[v0] Email notification sent:', notification);
-      // Example: Call external email API
-      // const response = await fetch('https://api.sendgrid.com/v3/mail/send', {...})
+      console.log("[db] Email notification sent:", notification);
       return true;
     } catch (error) {
-      console.error('[v0] Failed to send email:', error);
+      console.error("[db] Failed to send email:", error);
       return false;
     }
   },
 
-  // Push notification (integration point)
   sendPush: async (notification: Notification): Promise<boolean> => {
     try {
-      console.log('[v0] Push notification sent:', notification);
-      // This would integrate with push notification service
+      console.log("[db] Push notification sent:", notification);
       return true;
     } catch (error) {
-      console.error('[v0] Failed to send push:', error);
+      console.error("[db] Failed to send push:", error);
       return false;
     }
   },
 
-  // Get notification count for user
   getUnreadCount: async (userId: string): Promise<number> => {
-    const notifications = await notificationsService.getUserNotifications(userId, true);
-    return notifications.length;
+    return db.getUnreadCount(userId);
   },
 
-  // Auto-generate notifications based on events
-  onProjectCreated: async (projectId: string, teamMemberIds: string[]): Promise<void> => {
+  getAllNotifications: async (): Promise<Notification[]> => {
+    const rows: any[] = await db.getAllNotifications();
+    return rows.map((r) => ({
+      id: r._id,
+      userId: r.userId,
+      type: r.type,
+      title: r.title,
+      message: r.message,
+      read: r.read,
+      createdAt: r.createdAt,
+      actionUrl: r.actionUrl,
+      actionData: r.actionData || {},
+    }));
+  },
+
+  getNotificationById: async (
+    notificationId: string
+  ): Promise<Notification | null> => {
+    const r: any = await db.getNotificationById(notificationId);
+    if (!r) return null;
+    return {
+      id: r._id,
+      userId: r.userId,
+      type: r.type,
+      title: r.title,
+      message: r.message,
+      read: r.read,
+      createdAt: r.createdAt,
+      actionUrl: r.actionUrl,
+      actionData: r.actionData || {},
+    };
+  },
+
+  updateNotification: async (
+    notificationId: string,
+    updates: Partial<Omit<Notification, "id" | "createdAt">>
+  ): Promise<Notification | null> => {
+    const r: any = await db.updateNotification(notificationId, updates as any);
+    if (!r) return null;
+    return {
+      id: r._id,
+      userId: r.userId,
+      type: r.type,
+      title: r.title,
+      message: r.message,
+      read: r.read,
+      createdAt: r.createdAt,
+      actionUrl: r.actionUrl,
+      actionData: r.actionData || {},
+    };
+  },
+
+  // Event hooks
+  onProjectCreated: async (
+    projectId: string,
+    teamMemberIds: string[]
+  ): Promise<void> => {
     for (const userId of teamMemberIds) {
       await notificationsService.createNotification({
         userId,
-        type: 'project',
-        title: 'New Project Assigned',
+        type: "project",
+        title: "New Project Assigned",
         message: `You have been assigned to a new project`,
         read: false,
         actionUrl: `/admin/projects/${projectId}`,
@@ -210,11 +242,15 @@ export const notificationsService = {
     }
   },
 
-  onTaskAssigned: async (taskId: string, userId: string, taskTitle: string): Promise<void> => {
+  onTaskAssigned: async (
+    taskId: string,
+    userId: string,
+    taskTitle: string
+  ): Promise<void> => {
     await notificationsService.createNotification({
       userId,
-      type: 'task',
-      title: 'New Task Assigned',
+      type: "task",
+      title: "New Task Assigned",
       message: `You have been assigned to: ${taskTitle}`,
       read: false,
       actionUrl: `/admin/projects/tasks/${taskId}`,
@@ -222,12 +258,16 @@ export const notificationsService = {
     });
   },
 
-  onMeetingScheduled: async (meetingId: string, attendeeIds: string[], meetingTitle: string): Promise<void> => {
+  onMeetingScheduled: async (
+    meetingId: string,
+    attendeeIds: string[],
+    meetingTitle: string
+  ): Promise<void> => {
     for (const userId of attendeeIds) {
       await notificationsService.createNotification({
         userId,
-        type: 'meeting',
-        title: 'Meeting Scheduled',
+        type: "meeting",
+        title: "Meeting Scheduled",
         message: `You have a meeting: ${meetingTitle}`,
         read: false,
         actionUrl: `/admin/meetings/${meetingId}`,
@@ -236,11 +276,15 @@ export const notificationsService = {
     }
   },
 
-  onApprovalNeeded: async (userId: string, resourceType: string, resourceId: string): Promise<void> => {
+  onApprovalNeeded: async (
+    userId: string,
+    resourceType: string,
+    resourceId: string
+  ): Promise<void> => {
     await notificationsService.createNotification({
       userId,
-      type: 'approval',
-      title: 'Approval Required',
+      type: "approval",
+      title: "Approval Required",
       message: `A ${resourceType} is waiting for your approval`,
       read: false,
       actionUrl: `/admin/approvals/${resourceId}`,
@@ -248,15 +292,21 @@ export const notificationsService = {
     });
   },
 
-  onDeadlineApproaching: async (userId: string, taskTitle: string, daysLeft: number): Promise<void> => {
+  onDeadlineApproaching: async (
+    userId: string,
+    taskTitle: string,
+    daysLeft: number
+  ): Promise<void> => {
     await notificationsService.createNotification({
       userId,
-      type: 'deadline',
-      title: 'Deadline Approaching',
+      type: "deadline",
+      title: "Deadline Approaching",
       message: `${taskTitle} is due in ${daysLeft} days`,
       read: false,
     });
   },
 };
+
+// preferences are persisted via `db` now
 
 export type NotificationsService = typeof notificationsService;

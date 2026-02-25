@@ -280,6 +280,56 @@ const knowledgeBaseSchema = new mongoose.Schema(
   { collection: "knowledgeBase" }
 );
 
+const strategySchema = new mongoose.Schema(
+  {
+    _id: String,
+    title: { type: String, required: true },
+    description: String,
+    ownerId: String,
+    canvas: { type: mongoose.Schema.Types.Mixed, default: {} },
+    tags: [String],
+    status: {
+      type: String,
+      enum: ["draft", "active", "archived"],
+      default: "draft",
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { collection: "strategies" }
+);
+
+const productSchema = new mongoose.Schema(
+  {
+    _id: String,
+    title: { type: String, required: true },
+    description: String,
+    ownerId: String,
+    features: [
+      {
+        id: String,
+        title: String,
+        score: Number,
+        status: {
+          type: String,
+          enum: ["planned", "in-progress", "done"],
+          default: "planned",
+        },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    roadmap: { type: mongoose.Schema.Types.Mixed, default: {} },
+    status: {
+      type: String,
+      enum: ["draft", "active", "archived"],
+      default: "draft",
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { collection: "products" }
+);
+
 const clientSchema = new mongoose.Schema(
   {
     _id: String,
@@ -291,6 +341,51 @@ const clientSchema = new mongoose.Schema(
     joinDate: { type: Date, default: Date.now },
   },
   { collection: "clients" }
+);
+
+const notificationSchema = new mongoose.Schema(
+  {
+    _id: String,
+    userId: { type: String, required: true, index: true },
+    type: {
+      type: String,
+      enum: [
+        "project",
+        "task",
+        "meeting",
+        "message",
+        "approval",
+        "deadline",
+        "mention",
+        "system",
+      ],
+      default: "message",
+    },
+    title: { type: String, required: true },
+    message: { type: String, required: true },
+    read: { type: Boolean, default: false, index: true },
+    createdAt: { type: Date, default: Date.now, index: true },
+    actionUrl: String,
+    actionData: { type: mongoose.Schema.Types.Mixed, default: {} },
+  },
+  { collection: "notifications" }
+);
+
+const notificationPreferenceSchema = new mongoose.Schema(
+  {
+    userId: { type: String, required: true, unique: true, index: true },
+    email: { type: Boolean, default: true },
+    push: { type: Boolean, default: true },
+    inApp: { type: Boolean, default: true },
+    channels: {
+      projects: { type: Boolean, default: true },
+      tasks: { type: Boolean, default: true },
+      meetings: { type: Boolean, default: true },
+      messages: { type: Boolean, default: true },
+      approvals: { type: Boolean, default: true },
+    },
+  },
+  { collection: "notificationPreferences" }
 );
 
 // Get or create models
@@ -320,6 +415,16 @@ const getModels = () => {
     KnowledgeBase:
       mongoose.models.KnowledgeBase ||
       mongoose.model("KnowledgeBase", knowledgeBaseSchema),
+    Strategy:
+      mongoose.models.Strategy || mongoose.model("Strategy", strategySchema),
+    Product:
+      mongoose.models.Product || mongoose.model("Product", productSchema),
+    NotificationPreference:
+      mongoose.models.NotificationPreference ||
+      mongoose.model("NotificationPreference", notificationPreferenceSchema),
+    Notification:
+      mongoose.models.Notification ||
+      mongoose.model("Notification", notificationSchema),
   };
 };
 
@@ -375,6 +480,12 @@ export const db = {
       joinDate: userData.joinDate || new Date(),
     });
     return newUser.save();
+  },
+
+  async updateUser(id: string, updates: any) {
+    await connectToDB();
+    const { User } = getModels();
+    return User.findOneAndUpdate({ _id: id }, updates, { new: true }).lean();
   },
 
   // Client operations
@@ -743,6 +854,289 @@ export const db = {
     });
     return newKB.save();
   },
+
+  // Strategy operations (Business Engine)
+  async getStrategies(filter?: any) {
+    await connectToDB();
+    const { Strategy } = getModels();
+    const query: any = {};
+    if (filter?.ownerId) query.ownerId = filter.ownerId;
+    if (filter?.status) query.status = filter.status;
+    if (filter?.tag) query.tags = filter.tag;
+    return Strategy.find(query).sort({ createdAt: -1 }).lean();
+  },
+
+  async getStrategyById(id: string) {
+    await connectToDB();
+    const { Strategy } = getModels();
+    return Strategy.findOne({ _id: id }).lean();
+  },
+
+  async createStrategy(data: any) {
+    await connectToDB();
+    const { Strategy } = getModels();
+    const newItem = new Strategy({
+      _id: data._id || `str-${Date.now()}`,
+      title: data.title,
+      description: data.description || "",
+      ownerId: data.ownerId,
+      canvas: data.canvas || {},
+      tags: data.tags || [],
+      status: data.status || "draft",
+      createdAt: data.createdAt || new Date(),
+      updatedAt: data.updatedAt || new Date(),
+    });
+    return newItem.save();
+  },
+
+  async updateStrategy(id: string, updates: any) {
+    await connectToDB();
+    const { Strategy } = getModels();
+    updates.updatedAt = new Date();
+    return Strategy.findOneAndUpdate({ _id: id }, updates, {
+      new: true,
+    }).lean();
+  },
+
+  async deleteStrategy(id: string) {
+    await connectToDB();
+    const { Strategy } = getModels();
+    return Strategy.findOneAndDelete({ _id: id });
+  },
+
+  // Product operations (Product & Execution Engine)
+  async getProducts(filter?: any) {
+    await connectToDB();
+    const { Product } = getModels();
+    const query: any = {};
+    if (filter?.ownerId) query.ownerId = filter.ownerId;
+    if (filter?.status) query.status = filter.status;
+    return Product.find(query).sort({ createdAt: -1 }).lean();
+  },
+
+  async getProductById(id: string) {
+    await connectToDB();
+    const { Product } = getModels();
+    return Product.findOne({ _id: id }).lean();
+  },
+
+  async createProduct(data: any) {
+    await connectToDB();
+    const { Product } = getModels();
+    const newItem = new Product({
+      _id: data._id || `prod-${Date.now()}`,
+      title: data.title,
+      description: data.description || "",
+      ownerId: data.ownerId,
+      features: data.features || [],
+      roadmap: data.roadmap || {},
+      status: data.status || "draft",
+      createdAt: data.createdAt || new Date(),
+      updatedAt: data.updatedAt || new Date(),
+    });
+    return newItem.save();
+  },
+
+  async updateProduct(id: string, updates: any) {
+    await connectToDB();
+    const { Product } = getModels();
+    updates.updatedAt = new Date();
+    return Product.findOneAndUpdate({ _id: id }, updates, { new: true }).lean();
+  },
+
+  async deleteProduct(id: string) {
+    await connectToDB();
+    const { Product } = getModels();
+    return Product.findOneAndDelete({ _id: id });
+  },
+
+  // Notification operations
+  async createNotification(notifData: any) {
+    await connectToDB();
+    const { Notification } = getModels();
+    const newNotif = new Notification({
+      _id: notifData._id || `notif-${Date.now()}`,
+      userId: notifData.userId,
+      type: notifData.type || "message",
+      title: notifData.title,
+      message: notifData.message,
+      read: notifData.read || false,
+      createdAt: notifData.createdAt || new Date(),
+      actionUrl: notifData.actionUrl,
+      actionData: notifData.actionData || {},
+    });
+    return newNotif.save();
+  },
+
+  async getUserNotifications(userId: string, unreadOnly = false) {
+    await connectToDB();
+    const { Notification } = getModels();
+    const query: any = { userId };
+    if (unreadOnly) query.read = false;
+    return Notification.find(query).sort({ createdAt: -1 }).lean();
+  },
+
+  async getAllNotifications() {
+    await connectToDB();
+    const { Notification } = getModels();
+    return Notification.find({}).sort({ createdAt: -1 }).lean();
+  },
+
+  async getNotificationById(id: string) {
+    await connectToDB();
+    const { Notification } = getModels();
+    return Notification.findOne({ _id: id }).lean();
+  },
+
+  async updateNotification(id: string, updates: any) {
+    await connectToDB();
+    const { Notification } = getModels();
+    return Notification.findOneAndUpdate({ _id: id }, updates, {
+      new: true,
+    }).lean();
+  },
+
+  async deleteNotification(id: string) {
+    await connectToDB();
+    const { Notification } = getModels();
+    return Notification.findOneAndDelete({ _id: id });
+  },
+
+  async markAsRead(id: string) {
+    await connectToDB();
+    const { Notification } = getModels();
+    const res = await Notification.findOneAndUpdate(
+      { _id: id },
+      { read: true },
+      { new: true }
+    ).lean();
+    return !!res;
+  },
+
+  async markAllAsRead(userId: string) {
+    await connectToDB();
+    const { Notification } = getModels();
+    const res = await Notification.updateMany(
+      { userId, read: false },
+      { read: true }
+    );
+    return res.modifiedCount || 0;
+  },
+
+  async getUnreadCount(userId: string) {
+    await connectToDB();
+    const { Notification } = getModels();
+    return Notification.countDocuments({ userId, read: false });
+  },
+
+  async getPreferences(userId: string) {
+    await connectToDB();
+    const { NotificationPreference } = getModels();
+    const pref = await NotificationPreference.findOne({ userId }).lean();
+    if (pref) return pref;
+    // return defaults if not set
+    return {
+      userId,
+      email: true,
+      push: true,
+      inApp: true,
+      channels: {
+        projects: true,
+        tasks: true,
+        meetings: true,
+        messages: true,
+        approvals: true,
+      },
+    };
+  },
+
+  async setPreferences(userId: string, prefs: any) {
+    await connectToDB();
+    const { NotificationPreference } = getModels();
+    const updated = await NotificationPreference.findOneAndUpdate(
+      { userId },
+      { $set: prefs },
+      { upsert: true, new: true }
+    ).lean();
+    return updated;
+  },
 };
 
-export { connectToDB };
+// Lead Schema for CRM
+const leadSchema = new mongoose.Schema(
+  {
+    _id: String,
+    fullName: { type: String, required: true },
+    company: { type: String, required: true },
+    email: { type: String, required: true },
+    phone: String,
+    linkedinUrl: String,
+    website: String,
+    source: {
+      type: String,
+      enum: ["LinkedIn", "Hackathon", "Freelance", "Agency", "Referral"],
+      required: true,
+    },
+    location: String,
+    industry: String,
+    companyStage: {
+      type: String,
+      enum: ["Idea", "MVP", "Revenue"],
+    },
+    teamSize: Number,
+    dateAdded: { type: Date, default: Date.now },
+    // Qualification
+    problemIdentified: String,
+    urgencyLevel: { type: Number, min: 1, max: 5 },
+    budgetRange: {
+      type: String,
+      enum: ["₹50k", "₹2L", "₹10L", "₹50L+"],
+    },
+    isDecisionMaker: Boolean,
+    currentTechStack: String,
+    revenue: String,
+    timeline: String,
+    fitScore: { type: Number, min: 1, max: 10 },
+    // Outreach
+    dateContacted: Date,
+    channelUsed: String,
+    messageType: { type: String, enum: ["Cold DM", "Warm Intro"] },
+    replyReceived: Boolean,
+    followUp1Date: Date,
+    followUp2Date: Date,
+    callBooked: Boolean,
+    proposalSent: Boolean,
+    status: {
+      type: String,
+      enum: ["New", "Contacted", "Qualified", "Proposal", "Closed", "Lost"],
+      default: "New",
+    },
+    // Deal
+    projectValue: Number,
+    pricingModel: String,
+    expectedCloseDate: Date,
+    actualCloseDate: Date,
+    paymentStatus: {
+      type: String,
+      enum: ["Pending", "Partial", "Complete"],
+    },
+    advanceReceived: Number,
+    marginPercentage: Number,
+    projectType: String,
+    // Scoring
+    leadTemperature: { type: String, enum: ["Cold", "Warm", "Hot"] },
+    painSeverityScore: { type: Number, min: 1, max: 10 },
+    technicalComplexity: {
+      type: String,
+      enum: ["Low", "Medium", "High"],
+    },
+    objectionType: String,
+    whyLost: String,
+    notes: String,
+    createdDate: { type: Date, default: Date.now },
+    updatedDate: { type: Date, default: Date.now },
+  },
+  { collection: "leads" }
+);
+
+export { connectToDB, leadSchema };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Landing from "./landing/landing";
 import SnakeRoadmap from "./skills/snake-roadmap";
@@ -58,6 +59,29 @@ const EnhancedHomePage = () => {
 
   return (
     <div className="relative">
+      {/* Top-right navigation for Admin and Client panels */}
+      <header className="fixed top-4 right-4 z-50">
+        <nav aria-label="Primary navigation">
+          <ul className="flex items-center space-x-2 bg-white/80 dark:bg-black/60 backdrop-blur rounded-full p-1 shadow-sm">
+            <li>
+              <Link
+                href="/admin"
+                className="px-3 py-1 rounded-full text-sm font-medium text-gray-700 hover:bg-blue-100 dark:text-gray-200 dark:hover:bg-white/5"
+              >
+                Admin Panel
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/client"
+                className="px-3 py-1 rounded-full text-sm font-medium text-gray-700 hover:bg-blue-100 dark:text-gray-200 dark:hover:bg-white/5"
+              >
+                Client Panel
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      </header>
       {/* Global Components */}
       <MouseFollower />
       <ThemeToggle />

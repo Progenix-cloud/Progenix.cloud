@@ -2,8 +2,8 @@
 export interface CustomField {
   id: string;
   name: string;
-  fieldType: 'text' | 'number' | 'date' | 'select' | 'checkbox' | 'textarea';
-  entity: 'project' | 'task' | 'client' | 'invoice' | 'meeting';
+  fieldType: "text" | "number" | "date" | "select" | "checkbox" | "textarea";
+  entity: "project" | "task" | "client" | "invoice" | "meeting";
   required: boolean;
   options?: string[]; // For select fields
   placeholder?: string;
@@ -24,7 +24,9 @@ const fieldValues = new Map<string, CustomFieldValue[]>();
 
 export const customFieldsService = {
   // Create custom field definition
-  createField: async (field: Omit<CustomField, 'id' | 'createdAt'>): Promise<CustomField> => {
+  createField: async (
+    field: Omit<CustomField, "id" | "createdAt">
+  ): Promise<CustomField> => {
     const id = `cf-${Date.now()}-${Math.random()}`;
     const fullField: CustomField = {
       ...field,
@@ -33,7 +35,7 @@ export const customFieldsService = {
     };
 
     fieldDefinitions.set(id, fullField);
-    console.log('[v0] Custom field created:', fullField);
+    console.log("[v0] Custom field created:", fullField);
     return fullField;
   },
 
@@ -41,7 +43,7 @@ export const customFieldsService = {
   getFields: async (entity?: string): Promise<CustomField[]> => {
     const fields = Array.from(fieldDefinitions.values());
     if (entity) {
-      return fields.filter(f => f.entity === entity);
+      return fields.filter((f) => f.entity === entity);
     }
     return fields;
   },
@@ -52,7 +54,10 @@ export const customFieldsService = {
   },
 
   // Update field definition
-  updateField: async (id: string, updates: Partial<CustomField>): Promise<CustomField | null> => {
+  updateField: async (
+    id: string,
+    updates: Partial<CustomField>
+  ): Promise<CustomField | null> => {
     const field = fieldDefinitions.get(id);
     if (!field) return null;
 
@@ -66,7 +71,10 @@ export const customFieldsService = {
     fieldDefinitions.delete(id);
     // Clean up values
     for (const [key, values] of fieldValues) {
-      fieldValues.set(key, values.filter(v => v.fieldId !== id));
+      fieldValues.set(
+        key,
+        values.filter((v) => v.fieldId !== id)
+      );
     }
     return true;
   },
@@ -78,18 +86,19 @@ export const customFieldsService = {
     value: any
   ): Promise<CustomFieldValue> => {
     const field = await customFieldsService.getField(fieldId);
-    if (!field) throw new Error('Field not found');
+    if (!field) throw new Error("Field not found");
 
     // Validate field type
-    if (field.fieldType === 'number' && isNaN(Number(value))) {
-      throw new Error('Invalid number value');
+    if (field.fieldType === "number" && isNaN(Number(value))) {
+      throw new Error("Invalid number value");
     }
 
     const key = `${entityId}`;
+    // eslint-disable-next-line prefer-const
     let values = fieldValues.get(key) || [];
 
     // Update or create value
-    const existingIndex = values.findIndex(v => v.fieldId === fieldId);
+    const existingIndex = values.findIndex((v) => v.fieldId === fieldId);
     const fieldValue: CustomFieldValue = { entityId, fieldId, value };
 
     if (existingIndex > -1) {
@@ -110,25 +119,32 @@ export const customFieldsService = {
   // Get field value
   getFieldValue: async (entityId: string, fieldId: string): Promise<any> => {
     const values = await customFieldsService.getFieldValues(entityId);
-    const value = values.find(v => v.fieldId === fieldId);
+    const value = values.find((v) => v.fieldId === fieldId);
     return value?.value || null;
   },
 
   // Validate field values
-  validateFieldValues: async (entity: string, values: Record<string, any>): Promise<{ valid: boolean; errors: string[] }> => {
+  validateFieldValues: async (
+    entity: string,
+    values: Record<string, any>
+  ): Promise<{ valid: boolean; errors: string[] }> => {
     const errors: string[] = [];
     const fields = await customFieldsService.getFields(entity);
 
     for (const field of fields) {
-      if (field.required && (!values[field.id] || values[field.id] === '')) {
+      if (field.required && (!values[field.id] || values[field.id] === "")) {
         errors.push(`${field.name} is required`);
       }
 
-      if (field.fieldType === 'number' && values[field.id] && isNaN(Number(values[field.id]))) {
+      if (
+        field.fieldType === "number" &&
+        values[field.id] &&
+        isNaN(Number(values[field.id]))
+      ) {
         errors.push(`${field.name} must be a number`);
       }
 
-      if (field.fieldType === 'select' && values[field.id] && field.options) {
+      if (field.fieldType === "select" && values[field.id] && field.options) {
         if (!field.options.includes(values[field.id])) {
           errors.push(`${field.name} has an invalid value`);
         }
@@ -142,31 +158,34 @@ export const customFieldsService = {
   },
 
   // Create default fields for entity
-  createDefaultFields: async (entity: string, createdBy: string): Promise<void> => {
-    if (entity === 'project') {
+  createDefaultFields: async (
+    entity: string,
+    createdBy: string
+  ): Promise<void> => {
+    if (entity === "project") {
       await customFieldsService.createField({
-        name: 'Project Code',
-        fieldType: 'text',
-        entity: 'project',
+        name: "Project Code",
+        fieldType: "text",
+        entity: "project",
         required: false,
         displayOrder: 1,
         createdBy,
       });
 
       await customFieldsService.createField({
-        name: 'Project Type',
-        fieldType: 'select',
-        entity: 'project',
+        name: "Project Type",
+        fieldType: "select",
+        entity: "project",
         required: false,
-        options: ['Web Development', 'Mobile App', 'Consulting', 'Maintenance'],
+        options: ["Web Development", "Mobile App", "Consulting", "Maintenance"],
         displayOrder: 2,
         createdBy,
       });
 
       await customFieldsService.createField({
-        name: 'Budget Approved',
-        fieldType: 'checkbox',
-        entity: 'project',
+        name: "Budget Approved",
+        fieldType: "checkbox",
+        entity: "project",
         required: false,
         displayOrder: 3,
         createdBy,
@@ -193,7 +212,7 @@ export const customFieldsService = {
         count++;
       }
     } catch (error) {
-      throw new Error('Invalid JSON format');
+      throw new Error("Invalid JSON format");
     }
     return count;
   },

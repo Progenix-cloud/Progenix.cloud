@@ -1,10 +1,26 @@
 import Image from "next/image";
+import Link from "next/link";
 import MargeloImage from "public/margelo-logo.svg";
 
 const ContactUs = () => {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col justify-content items-center py-6 lg:py-6">
       <div className="flex flex-1 flex-col justify-center items-center">
+        <div className="flex gap-3 mb-4">
+          <Link
+            href="/admin"
+            className="px-4 py-2 bg-white text-black rounded-full font-semibold hover:opacity-90"
+          >
+            ADMIN PANEL
+          </Link>
+          <Link
+            href="/client"
+            className="px-4 py-2 bg-white text-black rounded-full font-semibold hover:opacity-90"
+          >
+            CLIENT PANEL
+          </Link>
+        </div>
+
         <div className="pb-10">
           <Image src={MargeloImage} width={30} height={30} alt="margelo logo" />
         </div>

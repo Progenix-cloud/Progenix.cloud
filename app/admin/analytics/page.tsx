@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Card } from '@/components/ui/card';
+import { Card } from "@/components/ui/card";
 import {
   LineChart,
   Line,
@@ -12,20 +12,20 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
-import { TrendingUp, TrendingDown, Target, Activity } from 'lucide-react';
+} from "recharts";
+import { TrendingUp, Target, Activity } from "lucide-react";
 
 export default function AnalyticsPage() {
   const projectTrendData = [
-    { month: 'Jan', completed: 2, inProgress: 1, planning: 1 },
-    { month: 'Feb', completed: 3, inProgress: 2, planning: 1 },
-    { month: 'Mar', completed: 3, inProgress: 3, planning: 1 },
+    { month: "Jan", completed: 2, inProgress: 1, planning: 1 },
+    { month: "Feb", completed: 3, inProgress: 2, planning: 1 },
+    { month: "Mar", completed: 3, inProgress: 3, planning: 1 },
   ];
 
   const taskCompletionData = [
-    { week: 'W1', completed: 45, pending: 15, overdue: 5 },
-    { week: 'W2', completed: 52, pending: 18, overdue: 3 },
-    { week: 'W3', completed: 58, pending: 12, overdue: 2 },
+    { week: "W1", completed: 45, pending: 15, overdue: 5 },
+    { week: "W2", completed: 52, pending: 18, overdue: 3 },
+    { week: "W3", completed: 58, pending: 12, overdue: 2 },
   ];
 
   return (
@@ -55,7 +55,9 @@ export default function AnalyticsPage() {
         <Card className="p-6">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Avg Completion Time</p>
+              <p className="text-sm text-muted-foreground">
+                Avg Completion Time
+              </p>
               <p className="text-3xl font-bold text-foreground mt-2">18 days</p>
               <p className="text-xs text-green-600 mt-2">-2 days improvement</p>
             </div>
@@ -70,7 +72,9 @@ export default function AnalyticsPage() {
             <div>
               <p className="text-sm text-muted-foreground">Budget Adherence</p>
               <p className="text-3xl font-bold text-foreground mt-2">89%</p>
-              <p className="text-xs text-yellow-600 mt-2">3% under budget avg</p>
+              <p className="text-xs text-yellow-600 mt-2">
+                3% under budget avg
+              </p>
             </div>
             <div className="p-3 bg-yellow-500/10 rounded-lg">
               <Target className="h-6 w-6 text-yellow-600" />
@@ -81,9 +85,13 @@ export default function AnalyticsPage() {
         <Card className="p-6">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Client Satisfaction</p>
+              <p className="text-sm text-muted-foreground">
+                Client Satisfaction
+              </p>
               <p className="text-3xl font-bold text-foreground mt-2">4.7/5</p>
-              <p className="text-xs text-green-600 mt-2">+0.2 pts improvement</p>
+              <p className="text-xs text-green-600 mt-2">
+                +0.2 pts improvement
+              </p>
             </div>
             <div className="p-3 bg-primary/10 rounded-lg">
               <TrendingUp className="h-6 w-6 text-primary" />

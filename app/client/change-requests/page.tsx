@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,10 +17,10 @@ import { CheckCircle, Clock, AlertCircle, Plus, Search } from "lucide-react";
 
 export default function ChangeRequestsPage() {
   const [changeRequests, setChangeRequests] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchChangeRequests = async () => {
@@ -43,6 +37,10 @@ export default function ChangeRequestsPage() {
 
     fetchChangeRequests();
   }, []);
+
+  if (loading) {
+    return <div className="p-8">Loading...</div>;
+  }
 
   const filtered = changeRequests.filter(
     (cr) =>

@@ -18,6 +18,7 @@ export interface BulkResult {
 export const bulkOperationsService = {
   // Execute bulk operations
   execute: async (operation: BulkOperation): Promise<BulkResult> => {
+    // eslint-disable-next-line prefer-const
     let result: BulkResult = {
       success: 0,
       failed: 0,
@@ -74,7 +75,7 @@ export const bulkOperationsService = {
     action: string,
     data?: any
   ): Promise<BulkResult> => {
-    let result: BulkResult = {
+    const result: BulkResult = {
       success: 0,
       failed: 0,
       errors: [],
@@ -132,7 +133,7 @@ export const bulkOperationsService = {
     action: string,
     data?: any
   ): Promise<BulkResult> => {
-    let result: BulkResult = {
+    const result: BulkResult = {
       success: 0,
       failed: 0,
       errors: [],
@@ -185,7 +186,7 @@ export const bulkOperationsService = {
     action: string,
     data?: any
   ): Promise<BulkResult> => {
-    let result: BulkResult = {
+    const result: BulkResult = {
       success: 0,
       failed: 0,
       errors: [],
@@ -238,7 +239,7 @@ export const bulkOperationsService = {
     action: string,
     data?: any
   ): Promise<BulkResult> => {
-    let result: BulkResult = {
+    const result: BulkResult = {
       success: 0,
       failed: 0,
       errors: [],

@@ -27,13 +27,10 @@ import { Progress } from "@/components/ui/progress";
 import {
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -42,13 +39,10 @@ import {
 import {
   Calendar,
   CheckCircle,
-  AlertCircle,
   DollarSign,
   Briefcase,
-  Users,
   PlusCircle,
   MessageSquare,
-  FileText,
   CreditCard,
   TrendingUp,
   Download,
@@ -283,7 +277,9 @@ export default function ClientDashboard() {
     },
   ];
 
-  const paymentStatus = [
+  // Payment status data (currently unused but kept for future use)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _paymentStatus = [
     {
       name: "Paid",
       value: invoices.filter((i) => i.status === "paid").length,

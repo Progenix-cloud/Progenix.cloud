@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -439,7 +440,7 @@ interface ProjectDocument {
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedProject] = useState<Project | null>(null);
   const [projectDocuments, setProjectDocuments] = useState<ProjectDocument[]>(
     []
   );
@@ -642,24 +643,16 @@ export default function ProjectsPage() {
 
           <div className="space-y-2">
             {projects.map((project) => (
-              <Card
-                key={project._id}
-                className={`p-4 cursor-pointer transition-all ${
-                  selectedProject?._id === project._id
-                    ? "ring-2 ring-primary"
-                    : "hover:shadow-md"
-                }`}
-                onClick={() => {
-                  setSelectedProject(project);
-                  setSelectedDoc(null);
-                  setIsCreatingDoc(false);
-                }}
-              >
-                <h3 className="font-semibold">{project.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {project.clientId}
-                </p>
-              </Card>
+              <Link key={project._id} href={`/admin/projects/${project._id}`}>
+                <Card
+                  className={`p-4 cursor-pointer transition-all hover:shadow-md`}
+                >
+                  <h3 className="font-semibold">{project.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {project.clientId}
+                  </p>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>

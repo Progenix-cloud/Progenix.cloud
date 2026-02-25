@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -12,60 +12,65 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { AlertCircle, CheckCircle, Clock, Plus, Search } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { AlertCircle, CheckCircle, Clock, Plus, Search } from "lucide-react";
 
 export default function SupportPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
   const mockTickets = [
     {
-      id: 'TKT-001',
-      title: 'Login Issues on Mobile',
-      status: 'open',
-      priority: 'high',
-      createdDate: '2024-01-20',
+      id: "TKT-001",
+      title: "Login Issues on Mobile",
+      status: "open",
+      priority: "high",
+      createdDate: "2024-01-20",
       resolvedDate: null,
     },
     {
-      id: 'TKT-002',
-      title: 'Feature Request: Dark Mode',
-      status: 'in-progress',
-      priority: 'medium',
-      createdDate: '2024-01-18',
+      id: "TKT-002",
+      title: "Feature Request: Dark Mode",
+      status: "in-progress",
+      priority: "medium",
+      createdDate: "2024-01-18",
       resolvedDate: null,
     },
     {
-      id: 'TKT-003',
-      title: 'API Integration Error',
-      status: 'resolved',
-      priority: 'high',
-      createdDate: '2024-01-15',
-      resolvedDate: '2024-01-19',
+      id: "TKT-003",
+      title: "API Integration Error",
+      status: "resolved",
+      priority: "high",
+      createdDate: "2024-01-15",
+      resolvedDate: "2024-01-19",
     },
   ];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'resolved':
+      case "resolved":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'in-progress':
+      case "in-progress":
         return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'open':
+      case "open":
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       default:
         return null;
     }
   };
 
-  const getPriorityColor = (priority: string): "default" | "destructive" | "outline" | "secondary" => {
-    const colors: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
-      high: 'destructive',
-      medium: 'secondary',
-      low: 'outline',
+  const getPriorityColor = (
+    priority: string
+  ): "default" | "destructive" | "outline" | "secondary" => {
+    const colors: Record<
+      string,
+      "default" | "destructive" | "outline" | "secondary"
+    > = {
+      high: "destructive",
+      medium: "secondary",
+      low: "outline",
     };
-    return colors[priority] || 'outline';
+    return colors[priority] || "outline";
   };
 
   const filtered = mockTickets.filter((ticket) =>
@@ -133,7 +138,10 @@ export default function SupportPage() {
         <CardContent>
           <div className="space-y-4">
             {filtered.map((ticket) => (
-              <div key={ticket.id} className="flex items-start justify-between p-4 border rounded-lg">
+              <div
+                key={ticket.id}
+                className="flex items-start justify-between p-4 border rounded-lg"
+              >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     {getStatusIcon(ticket.status)}
@@ -149,7 +157,9 @@ export default function SupportPage() {
                   </p>
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <Badge variant={getPriorityColor(ticket.priority)}>{ticket.priority}</Badge>
+                  <Badge variant={getPriorityColor(ticket.priority)}>
+                    {ticket.priority}
+                  </Badge>
                   <Badge variant="outline">{ticket.status}</Badge>
                 </div>
               </div>

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Star, Plus } from 'lucide-react';
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Star, Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
 export default function FeedbackPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,25 +20,27 @@ export default function FeedbackPage() {
 
   const mockFeedback = [
     {
-      id: '1',
-      date: '2024-01-20',
-      category: 'communication',
+      id: "1",
+      date: "2024-01-20",
+      category: "communication",
       rating: 5,
-      message: 'Excellent communication from the team. Very responsive to changes.',
+      message:
+        "Excellent communication from the team. Very responsive to changes.",
     },
     {
-      id: '2',
-      date: '2024-01-15',
-      category: 'quality',
+      id: "2",
+      date: "2024-01-15",
+      category: "quality",
       rating: 4,
-      message: 'Code quality is good. Some minor improvements needed in documentation.',
+      message:
+        "Code quality is good. Some minor improvements needed in documentation.",
     },
     {
-      id: '3',
-      date: '2024-01-10',
-      category: 'timeline',
+      id: "3",
+      date: "2024-01-10",
+      category: "timeline",
       rating: 5,
-      message: 'Project delivered on time. Great project management.',
+      message: "Project delivered on time. Great project management.",
     },
   ];
 
@@ -53,7 +55,9 @@ export default function FeedbackPage() {
           >
             <Star
               className={`w-5 h-5 ${
-                star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+                star <= rating
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-gray-300"
               }`}
             />
           </button>
@@ -82,7 +86,8 @@ export default function FeedbackPage() {
             <DialogHeader>
               <DialogTitle>Submit Feedback</DialogTitle>
               <DialogDescription>
-                Help us improve by sharing your thoughts about our team and project collaboration.
+                Help us improve by sharing your thoughts about our team and
+                project collaboration.
               </DialogDescription>
             </DialogHeader>
             <form className="space-y-4">

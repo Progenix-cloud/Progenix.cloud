@@ -4,13 +4,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Baseline as Timeline,
-  CheckCircle,
-  Circle,
-  AlertCircle,
-} from "lucide-react";
+import { CheckCircle, Circle } from "lucide-react";
 import { apiService } from "@/lib/api-service";
 
 interface Project {

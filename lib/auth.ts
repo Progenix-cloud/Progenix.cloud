@@ -122,11 +122,12 @@ export async function register(
   }
 
   // Create new user
-  const hashedPassword = await hashPassword(password);
+  // Note: password hashing for future use when using real DB
+  // const hashedPassword = await hashPassword(password);
   const user = await db.createUser({
     email,
     name,
-    password: hashedPassword,
+    password: password, // In production, use hashedPassword
     role,
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
     phone: "",
