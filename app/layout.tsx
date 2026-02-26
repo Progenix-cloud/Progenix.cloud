@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import type { Metadata } from "next";
-import { InterFont } from "theme/font";
+import { InterFont } from "@/styles/theme/font";
 import "styles/globals.css";
 import { ClientProviders } from "./providers";
 

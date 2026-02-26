@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import RoadmapCard from "./roadmap-card";
-import { roadmap } from "constants/app/roadmap";
+import { roadmap } from "@/lib/constants/app/roadmap";
 
 const SnakeRoadmap = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -11,7 +11,7 @@ const SnakeRoadmap = () => {
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
   });
 
   const pathProgress = useTransform(scrollYProgress, [0, 1], [0, 1]);
@@ -26,12 +26,25 @@ const SnakeRoadmap = () => {
   }, [pathProgress]);
 
   return (
-    <div ref={containerRef} className="relative min-h-screen flex flex-col items-center justify-center py-20 overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative min-h-screen flex flex-col items-center justify-center py-20 overflow-hidden"
+    >
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <svg className="w-full h-full" viewBox="0 0 100 100">
-          <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-            <path d="M 10 0 L 0 0 0 10" fill="none" stroke="currentColor" strokeWidth="0.5"/>
+          <pattern
+            id="grid"
+            width="10"
+            height="10"
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d="M 10 0 L 0 0 0 10"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.5"
+            />
           </pattern>
           <rect width="100" height="100" fill="url(#grid)" />
         </svg>
@@ -62,17 +75,17 @@ const SnakeRoadmap = () => {
                   duration: 0.6,
                   delay: index * 0.2,
                   type: "spring",
-                  stiffness: 100
+                  stiffness: 100,
                 }}
                 viewport={{ once: true }}
                 whileHover={{
                   scale: 1.05,
                   rotateY: 5,
-                  z: 20
+                  z: 20,
                 }}
                 style={{
                   perspective: "1000px",
-                  transformStyle: "preserve-3d"
+                  transformStyle: "preserve-3d",
                 }}
               >
                 <RoadmapCard
@@ -134,8 +147,8 @@ const SnakeRoadmap = () => {
               key={index}
               className={`relative w-4 h-4 rounded-full transition-all duration-300 ${
                 index === activeIndex
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg'
-                  : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-lg"
+                  : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
               }`}
               onClick={() => setActiveIndex(index)}
               whileHover={{ scale: 1.2 }}
@@ -172,7 +185,8 @@ const SnakeRoadmap = () => {
           <div className="inline-flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-6 py-3 shadow-lg border border-gray-200 dark:border-gray-700">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Step {activeIndex + 1} of {roadmap.length}: {roadmap[activeIndex]?.title}
+              Step {activeIndex + 1} of {roadmap.length}:{" "}
+              {roadmap[activeIndex]?.title}
             </span>
           </div>
         </motion.div>

@@ -2,8 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaQuoteLeft, FaChevronLeft, FaChevronRight, FaStar } from "react-icons/fa";
-import { reviews } from "constants/app/testimonials";
+import {
+  FaQuoteLeft,
+  FaChevronLeft,
+  FaChevronRight,
+  FaStar,
+} from "react-icons/fa";
+import { reviews } from "@/lib/constants/app/testimonials";
 
 const TestimonialCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -42,7 +47,8 @@ const TestimonialCarousel = () => {
             What Our Clients Say
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Don&apos;t just take our word for it - hear from the companies we&apos;ve helped transform
+            Don&apos;t just take our word for it - hear from the companies
+            we&apos;ve helped transform
           </p>
         </div>
 
@@ -52,7 +58,9 @@ const TestimonialCarousel = () => {
             <AnimatePresence mode="wait">
               {reviews.map((review, index) => {
                 const isActive = index === currentIndex;
-                const isPrev = index === (currentIndex - 1 + reviews.length) % reviews.length;
+                const isPrev =
+                  index ===
+                  (currentIndex - 1 + reviews.length) % reviews.length;
                 const isNext = index === (currentIndex + 1) % reviews.length;
 
                 let zIndex = 0;
@@ -93,7 +101,7 @@ const TestimonialCarousel = () => {
                       type: "spring",
                       stiffness: 300,
                       damping: 30,
-                      duration: 0.5
+                      duration: 0.5,
                     }}
                   >
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-2xl mx-4 border border-gray-200 dark:border-gray-700">

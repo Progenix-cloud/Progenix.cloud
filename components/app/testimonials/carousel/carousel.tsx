@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, ReactNode } from "react";
-import { useCarouselContext } from "providers/carousel/carousel-context";
+import { useCarouselContext } from "@/lib/providers/carousel/carousel-context";
 import styles from "styles/modules/carousel.module.css";
 
 type CarouselProps = {

@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef } from "react";
-import { useScrollContext } from "providers/scroll/scroll-context";
+import { useScrollContext } from "@/lib/providers/scroll/scroll-context";
 import styles from "styles/modules/skills.module.css";
-import { skillsText } from "constants/app/skills";
+import { skillsText } from "@/lib/constants/app/skills";
 import SnakeRoadmap from "./snake-roadmap";
 
 const opacityForBlock = (sectionProgress: number, blockNumber: number) => {

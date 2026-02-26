@@ -435,9 +435,7 @@ async function connectToDB() {
   }
 
   try {
-    const conn = await mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-    });
+    const conn = await mongoose.connect(MONGODB_URI);
     cachedConnection = conn;
     return conn;
   } catch (error) {

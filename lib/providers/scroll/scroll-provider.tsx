@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, ReactNode } from "react";
-import { ScrollContext } from "providers/scroll/scroll-context";
+import { ScrollContext } from "@/lib/providers/scroll/scroll-context";
 
 type ScrollType = {
   children: ReactNode;

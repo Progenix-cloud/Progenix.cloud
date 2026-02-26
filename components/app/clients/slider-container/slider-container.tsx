@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useRef } from "react";
-import { useAnimationFrame } from "hooks/useAnimationFrame/useAnimationFrame";
-import { useWidthSizeContext } from "providers/width-size/width-size-context";
+import { useAnimationFrame } from "@/lib/hooks/useAnimationFrame/useAnimationFrame";
+import { useWidthSizeContext } from "@/lib/providers/width-size/width-size-context";
 
 type SliderContainerProps = {
   children: React.ReactNode;

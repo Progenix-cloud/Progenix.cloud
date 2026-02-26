@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { clients } from "constants/app/clients";
+import { clients } from "@/lib/constants/app/clients";
 
 const EnhancedClientLogos = () => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -17,7 +17,8 @@ const EnhancedClientLogos = () => {
             Trusted by Industry Leaders
           </h3>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            We&apos;ve had the privilege of working with amazing companies and delivering exceptional results
+            We&apos;ve had the privilege of working with amazing companies and
+            delivering exceptional results
           </p>
         </div>
 
@@ -32,7 +33,11 @@ const EnhancedClientLogos = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Link href={client.link} target="_blank" rel="noopener noreferrer">
+              <Link
+                href={client.link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 p-6 h-32 flex items-center justify-center border border-gray-200 dark:border-gray-700 group-hover:border-blue-300 dark:group-hover:border-blue-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                   {/* Logo Image */}
                   <motion.div
@@ -48,7 +53,10 @@ const EnhancedClientLogos = () => {
                       fill
                       className="object-contain opacity-60 group-hover:opacity-100 transition-all duration-500 drop-shadow-sm group-hover:drop-shadow-lg"
                       style={{
-                        filter: hoveredIndex === index ? 'none' : 'grayscale(30%) brightness(0.9)',
+                        filter:
+                          hoveredIndex === index
+                            ? "none"
+                            : "grayscale(30%) brightness(0.9)",
                       }}
                     />
                   </motion.div>
@@ -138,15 +146,21 @@ const EnhancedClientLogos = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="text-3xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-gray-600 dark:text-gray-300">Projects Completed</div>
+              <div className="text-gray-600 dark:text-gray-300">
+                Projects Completed
+              </div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="text-3xl font-bold text-purple-600 mb-2">50+</div>
-              <div className="text-gray-600 dark:text-gray-300">Happy Clients</div>
+              <div className="text-gray-600 dark:text-gray-300">
+                Happy Clients
+              </div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="text-3xl font-bold text-pink-600 mb-2">5+</div>
-              <div className="text-gray-600 dark:text-gray-300">Years Experience</div>
+              <div className="text-gray-600 dark:text-gray-300">
+                Years Experience
+              </div>
             </div>
           </div>
         </motion.div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, ReactNode } from "react";
-import { WidthSizeContext } from "providers/width-size/width-size-context";
+import { WidthSizeContext } from "@/lib/providers/width-size/width-size-context";
 
 type WidthSizeType = {
   children: ReactNode;

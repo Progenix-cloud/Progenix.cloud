@@ -60,6 +60,7 @@ export async function verifySession(
       return null;
     }
 
+    await db.connect();
     // Verify user still exists
     const user = await db.getUserById(decoded.userId);
     if (!user) {
@@ -82,6 +83,7 @@ export async function login(
   email: string,
   password: string
 ): Promise<{ user: SessionUser; token: string } | null> {
+  await db.connect();
   const user = await db.getUser(email);
 
   if (!user) {
@@ -115,6 +117,7 @@ export async function register(
   password: string,
   role: SessionUser["role"] = "client"
 ): Promise<{ user: SessionUser; token: string } | null> {
+  await db.connect();
   // Check if user already exists
   const existingUser = await db.getUser(email);
   if (existingUser) {

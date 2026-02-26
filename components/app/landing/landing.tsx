@@ -6,7 +6,11 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import MargeloImage from "public/margelo-logo.svg";
 import ArrowDown from "public/arrow-down.webp";
 import styles from "styles/modules/landing.module.css";
-import { companyName, taglinePrefixes, taglineSuffix } from "constants/app/landing";
+import {
+  companyName,
+  taglinePrefixes,
+  taglineSuffix,
+} from "@/lib/constants/app/landing";
 
 const Landing = () => {
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
@@ -19,11 +23,15 @@ const Landing = () => {
 
   const { scrollYProgress } = useScroll({
     target: refContainer,
-    offset: ["start start", "end start"]
+    offset: ["start start", "end start"],
   });
 
   const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
-  const backgroundOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.8, 0.3]);
+  const backgroundOpacity = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    [1, 0.8, 0.3]
+  );
 
   const handleImageLoaded = useCallback(() => {
     setImageLoaded(true);
@@ -130,7 +138,9 @@ const Landing = () => {
           imageLoaded ? "opacity-100" : "opacity-0"
         }`}
       >
-        <h1 className="landing__title text-4xl mb-6 lg:text-5xl">{companyName}</h1>
+        <h1 className="landing__title text-4xl mb-6 lg:text-5xl">
+          {companyName}
+        </h1>
         <h2 className="landing__subtitle text-2xl tracking-tight mb-2 lg:text-3xl transition-all duration-500">
           {displayText}, {taglineSuffix}.
         </h2>

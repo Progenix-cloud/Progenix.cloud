@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, ReactNode } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import ClassNames from "embla-carousel-class-names";
 import Autoplay from "embla-carousel-autoplay";
-import { CarouselContext } from "providers/carousel/carousel-context";
+import { CarouselContext } from "@/lib/providers/carousel/carousel-context";
 
 type CarouselType = {
   children: ReactNode;
