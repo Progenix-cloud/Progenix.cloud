@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 interface CreateLeadModalProps {
   open: boolean;
@@ -64,13 +65,18 @@ export default function CreateLeadModal({
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        const newLead = await response.json();
+        const payload = await response.json();
+        const newLead = payload.data || payload;
         onSuccess(newLead);
+        onClose();
+      } else {
+        const err = await response.json();
+        console.error("Lead create failed:", err?.error || err);
       }
     } catch (error) {
       console.error("Error creating lead:", error);

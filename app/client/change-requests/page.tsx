@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
+import { useForm } from "react-hook-form";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,39 +16,107 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CheckCircle, Clock, AlertCircle, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { apiService } from "@/lib/api-service";
+import { CardSkeleton } from "@/components/loading-skeleton";
+import { buildAuthHeaders, getStoredClientId } from "@/lib/client-auth";
+
+interface ChangeRequestForm {
+  title: string;
+  description: string;
+  impact: string;
+  estimatedEffort: "low" | "medium" | "high";
+}
 
 export default function ChangeRequestsPage() {
-  const [changeRequests, setChangeRequests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [clientId, setClientId] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ChangeRequestForm>({
+    defaultValues: {
+      title: "",
+      description: "",
+      impact: "",
+      estimatedEffort: "medium",
+    },
+  });
 
   useEffect(() => {
-    const fetchChangeRequests = async () => {
-      try {
-        const res = await fetch("/api/change-requests");
-        const data = await res.json();
-        setChangeRequests(data.data || []);
-      } catch (error) {
-        console.error("Failed to fetch change requests:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChangeRequests();
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setClientId(user.clientId);
+    }
   }, []);
 
-  if (loading) {
-    return <div className="p-8">Loading...</div>;
-  }
-
-  const filtered = changeRequests.filter(
-    (cr) =>
-      (selectedStatus === "all" || cr.status === selectedStatus) &&
-      cr.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const { data: changeRequests = [], isLoading, mutate } = useSWR(
+    clientId ? ["change-requests", clientId] : null,
+    () => apiService.getChangeRequests({ clientId: clientId as string })
   );
+
+  const { data: projects = [] } = useSWR(
+    clientId ? ["projects", clientId] : null,
+    () => apiService.getProjects({ clientId: clientId as string })
+  );
+
+  useEffect(() => {
+    if (!projectId && projects.length > 0) {
+      setProjectId(projects[0]._id);
+    }
+  }, [projectId, projects]);
+
+  const filtered = useMemo(() => {
+    return changeRequests.filter(
+      (cr: any) =>
+        (selectedStatus === "all" || cr.status === selectedStatus) &&
+        cr.title.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [changeRequests, selectedStatus, searchTerm]);
+
+  const onSubmit = async (values: ChangeRequestForm) => {
+    const resolvedClientId = clientId || getStoredClientId();
+    if (!resolvedClientId) {
+      toast.error("Missing client session");
+      return;
+    }
+    try {
+      const payload = {
+        title: values.title,
+        description: values.description,
+        impact: values.impact,
+        estimatedEffort: values.estimatedEffort,
+        clientId: resolvedClientId,
+        projectId,
+        status: "pending",
+      };
+
+      const res = await fetch("/api/change-requests", {
+        method: "POST",
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        toast.success("Change request submitted");
+        setIsOpen(false);
+        reset();
+        mutate();
+      } else {
+        toast.error("Failed to submit change request");
+      }
+    } catch (error) {
+      console.error("Failed to submit change request:", error);
+      toast.error("Failed to submit change request");
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -69,6 +139,15 @@ export default function ChangeRequestsPage() {
     };
     return <Badge variant={variants[status]}>{status}</Badge>;
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-8 space-y-4">
+        <div className="h-8 w-52 bg-muted rounded animate-pulse" />
+        <CardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -94,23 +173,55 @@ export default function ChangeRequestsPage() {
                 description and impact analysis.
               </DialogDescription>
             </DialogHeader>
-            <form className="space-y-4">
-              <input
-                type="text"
-                placeholder="Title"
-                className="w-full px-3 py-2 border rounded"
-              />
-              <textarea
-                placeholder="Description"
-                className="w-full px-3 py-2 border rounded h-24"
-              />
-              <input
-                type="text"
-                placeholder="Impact Analysis"
-                className="w-full px-3 py-2 border rounded"
-              />
-              <Button onClick={() => setIsOpen(false)} className="w-full">
-                Submit
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Title"
+                  className="w-full px-3 py-2 border rounded"
+                  {...register("title", { required: "Title is required" })}
+                />
+                {errors.title && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.title.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <textarea
+                  placeholder="Description"
+                  className="w-full px-3 py-2 border rounded h-24"
+                  {...register("description", {
+                    required: "Description is required",
+                  })}
+                />
+                {errors.description && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.description.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Impact Analysis"
+                  className="w-full px-3 py-2 border rounded"
+                  {...register("impact")}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Estimated Effort</label>
+                <select
+                  className="w-full px-3 py-2 border rounded mt-2"
+                  {...register("estimatedEffort")}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit"}
               </Button>
             </form>
           </DialogContent>
@@ -145,9 +256,9 @@ export default function ChangeRequestsPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filtered.map((cr) => (
+            {filtered.map((cr: any) => (
               <div
-                key={cr.id}
+                key={cr.id || cr._id}
                 className="flex items-start justify-between p-4 border rounded-lg"
               >
                 <div className="flex-1">
@@ -163,8 +274,7 @@ export default function ChangeRequestsPage() {
                     <span>Impact: {cr.impact}</span>
                     <span>Effort: {cr.estimatedEffort}</span>
                     <span>
-                      Requested:{" "}
-                      {new Date(cr.submittedDate).toLocaleDateString()}
+                      Requested: {new Date(cr.submittedDate).toLocaleDateString()}
                     </span>
                   </div>
                 </div>

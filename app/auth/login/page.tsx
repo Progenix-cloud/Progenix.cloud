@@ -38,12 +38,18 @@ export default function LoginPage() {
         return;
       }
 
+      const payload = data?.data || {};
+
       // Store token in localStorage
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (payload.token) {
+        localStorage.setItem("authToken", payload.token);
+      }
+      if (payload.user) {
+        localStorage.setItem("user", JSON.stringify(payload.user));
+      }
 
       // Redirect to appropriate dashboard
-      if (data.user.role === "client") {
+      if (payload.user?.role === "client") {
         router.push("/client/dashboard");
       } else {
         router.push("/admin/dashboard");
@@ -111,24 +117,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="space-y-3 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              Demo credentials:
-            </p>
-            <div className="space-y-1 text-xs">
-              <p className="text-muted-foreground">
-                <span className="font-medium">Admin:</span> pm@agency.com
-              </p>
-              <p className="text-muted-foreground">
-                <span className="font-medium">Client:</span>{" "}
-                contact@techstartup.com
-              </p>
-              <p className="text-muted-foreground">
-                <span className="font-medium">Password:</span> demo
-              </p>
-            </div>
-          </div>
 
           <div className="text-center text-sm">
             <span className="text-muted-foreground">

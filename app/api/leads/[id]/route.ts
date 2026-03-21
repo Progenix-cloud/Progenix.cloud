@@ -1,6 +1,19 @@
 import { connectToDB } from "@/lib/db";
+import { apiError, apiSuccess, validateBody, withRBAC } from "@/lib/api-utils";
 import mongoose from "mongoose";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+
+const leadUpdateSchema = z
+  .object({
+    fullName: z.string().min(1).optional(),
+    company: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+    source: z
+      .enum(["LinkedIn", "Hackathon", "Freelance", "Agency", "Referral"])
+      .optional(),
+  })
+  .passthrough();
 
 const leadSchema = new mongoose.Schema(
   {
@@ -56,6 +69,8 @@ const leadSchema = new mongoose.Schema(
     objectionType: String,
     whyLost: String,
     notes: String,
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
     createdDate: { type: Date, default: Date.now },
     updatedDate: { type: Date, default: Date.now },
   },
@@ -73,76 +88,73 @@ async function getLeadModel() {
 }
 
 // GET single lead by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const GET = withRBAC(
+  "lead",
+  "read",
+  async (request: NextRequest, { params }: { params: { id: string } }) => {
   try {
     const LeadModel = await getLeadModel();
     const lead = await LeadModel.findById(params.id).lean();
 
     if (!lead) {
-      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+      return apiError("LEAD_NOT_FOUND", "Lead not found", 404);
     }
 
-    return NextResponse.json(lead);
+    return apiSuccess(lead);
   } catch (error) {
     console.error("Error fetching lead:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch lead" },
-      { status: 500 }
-    );
+    return apiError("LEAD_FETCH_FAILED", "Failed to fetch lead", 500);
   }
-}
+  }
+);
 
 // PUT - Update lead
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PUT = withRBAC(
+  "lead",
+  "update",
+  async (request: NextRequest, { params }: { params: { id: string } }) => {
   try {
-    const data = await request.json();
+    const data = validateBody(leadUpdateSchema, await request.json());
     const LeadModel = await getLeadModel();
 
     const lead = await LeadModel.findByIdAndUpdate(
       params.id,
-      { ...data, updatedDate: new Date() },
+      { ...data, updatedAt: new Date(), updatedDate: new Date() },
       { new: true }
     );
 
     if (!lead) {
-      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+      return apiError("LEAD_NOT_FOUND", "Lead not found", 404);
     }
 
-    return NextResponse.json(lead);
+    return apiSuccess(lead, "Lead updated");
   } catch (error) {
     console.error("Error updating lead:", error);
-    return NextResponse.json(
-      { error: "Failed to update lead" },
-      { status: 500 }
-    );
+    if (error instanceof Error && error.message.includes("Validation failed")) {
+      return apiError("VALIDATION_ERROR", error.message, 400);
+    }
+    return apiError("LEAD_UPDATE_FAILED", "Failed to update lead", 500);
   }
-}
+  }
+);
 
 // DELETE - Delete lead
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const DELETE = withRBAC(
+  "lead",
+  "delete",
+  async (_request: NextRequest, { params }: { params: { id: string } }) => {
   try {
     const LeadModel = await getLeadModel();
     const lead = await LeadModel.findByIdAndDelete(params.id);
 
     if (!lead) {
-      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+      return apiError("LEAD_NOT_FOUND", "Lead not found", 404);
     }
 
-    return NextResponse.json({ success: true, deletedId: params.id });
+    return apiSuccess({ id: params.id }, "Lead deleted");
   } catch (error) {
     console.error("Error deleting lead:", error);
-    return NextResponse.json(
-      { error: "Failed to delete lead" },
-      { status: 500 }
-    );
+    return apiError("LEAD_DELETE_FAILED", "Failed to delete lead", 500);
   }
-}
+  }
+);

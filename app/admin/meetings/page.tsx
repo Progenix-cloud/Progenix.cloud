@@ -15,6 +15,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Calendar,
   Clock,
   Users,
@@ -24,23 +31,38 @@ import {
 } from "lucide-react";
 import { apiService } from "@/lib/api-service";
 
+interface Project {
+  _id: string;
+  name: string;
+  clientId: string;
+}
+
 interface Meeting {
   _id: string;
+  projectId?: string;
+  clientId?: string;
   title: string;
-  projectId: string;
-  date: Date;
-  time: string;
-  duration: number;
-  attendees: string[];
-  status: string;
-  type: string;
-  description: string;
+  description?: string;
+  date?: Date;
+  time?: string;
+  duration?: number;
+  attendees?: string[];
+  meetingLink?: string;
+  type?: "kickoff" | "review" | "feedback" | "standup" | "other";
+  status?: "scheduled" | "completed" | "cancelled";
   notes?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  createdDate?: Date;
+  updatedDate?: Date;
 }
 
 export default function MeetingsPage() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [userMap, setUserMap] = useState<Record<string, any>>({});
   const [isOpen, setIsOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     projectId: "",
@@ -51,11 +73,66 @@ export default function MeetingsPage() {
   });
 
   useEffect(() => {
-    const loadMeetings = async () => {
-      const data = await apiService.getMeetings();
-      setMeetings(data);
-    };
     loadMeetings();
+    loadUsers();
+    loadProjects();
+  }, []);
+
+  const loadMeetings = async () => {
+    const data = await apiService.getMeetings();
+    setMeetings(data);
+  };
+
+  const loadUsers = async () => {
+    try {
+      const users = await apiService.getUsers();
+      const map: Record<string, any> = {};
+      users.forEach((u: any) => {
+        map[u._id] = u;
+      });
+      setUserMap(map);
+    } catch (error) {
+      console.error("Failed to load users:", error);
+    }
+  };
+
+  const loadProjects = async () => {
+    try {
+      const projectsData = await apiService.getProjects();
+      setProjects(projectsData);
+    } catch (error) {
+      console.error("Failed to load projects:", error);
+    }
+  };
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) return;
+    const user = JSON.parse(userStr);
+    const token = localStorage.getItem("authToken");
+    const url = new URL(
+      `/api/notifications/stream?userId=${user._id}`,
+      window.location.origin
+    );
+    if (token) url.searchParams.set("token", token);
+    const source = new EventSource(url.toString());
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (
+          data.type === "client-team.create" ||
+          data.type === "meeting.booked"
+        ) {
+          loadMeetings();
+        }
+      } catch (error) {
+        console.error("Failed to parse SSE message:", error);
+      }
+    };
+    source.onerror = () => {
+      source.close();
+    };
+    return () => source.close();
   }, []);
 
   const handleCreateMeeting = async () => {
@@ -64,13 +141,26 @@ export default function MeetingsPage() {
       return;
     }
 
-    await apiService.createMeeting({
-      ...formData,
-      date: new Date(formData.date),
-      status: "scheduled",
-      type: "meeting",
-      attendees: [],
-    });
+    if (editingId) {
+      // Update meeting
+      await apiService.updateMeeting(editingId, {
+        ...formData,
+        date: new Date(formData.date),
+        status: "scheduled",
+        type: "meeting",
+        attendees: [],
+      });
+      setEditingId(null);
+    } else {
+      // Create new meeting
+      await apiService.createMeeting({
+        ...formData,
+        date: new Date(formData.date),
+        status: "scheduled",
+        type: "meeting",
+        attendees: [],
+      });
+    }
 
     setFormData({
       title: "",
@@ -82,21 +172,51 @@ export default function MeetingsPage() {
     });
     setIsOpen(false);
 
-    const data = await apiService.getMeetings();
-    setMeetings(data);
+    loadMeetings();
+  };
+
+  const handleEdit = (meeting: Meeting) => {
+    setFormData({
+      title: meeting.title,
+      projectId: meeting.projectId || "",
+      date: meeting.date
+        ? new Date(meeting.date).toISOString().split("T")[0]
+        : "",
+      time: meeting.time || "",
+      duration: meeting.duration || 60,
+      description: meeting.description || "",
+    });
+    setEditingId(meeting._id);
+    setIsOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this meeting?")) {
+      await apiService.deleteMeeting(id);
+      loadMeetings();
+    }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-500/20 text-green-700";
+        return "bg-green-500/20 text-green-700 dark:text-green-400";
       case "scheduled":
-        return "bg-accent/20 text-accent";
+        return "bg-blue-500/20 text-blue-700 dark:text-blue-400";
       case "cancelled":
-        return "bg-destructive/20 text-destructive";
+        return "bg-red-500/20 text-red-700 dark:text-red-400";
       default:
-        return "bg-muted text-muted-foreground";
+        return "bg-gray-500/20 text-gray-700 dark:text-gray-400";
     }
+  };
+
+  const renderAttendees = (meeting: Meeting) => {
+    if (!meeting.attendees || meeting.attendees.length === 0) {
+      return "No attendees";
+    }
+    return meeting.attendees
+      .map((id) => userMap[id]?.name || userMap[id]?.email || id)
+      .join(", ");
   };
 
   const upcomingMeetings = meetings.filter((m) => m.status === "scheduled");
@@ -113,14 +233,29 @@ export default function MeetingsPage() {
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button
+              className="gap-2"
+              onClick={() => {
+                setEditingId(null);
+                setFormData({
+                  title: "",
+                  projectId: "",
+                  date: "",
+                  time: "",
+                  duration: 60,
+                  description: "",
+                });
+              }}
+            >
               <PlusCircle className="h-4 w-4" />
               Schedule Meeting
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Schedule Meeting</DialogTitle>
+              <DialogTitle>
+                {editingId ? "Edit Meeting" : "Schedule Meeting"}
+              </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -136,14 +271,31 @@ export default function MeetingsPage() {
               </div>
               <div>
                 <Label>Project *</Label>
-                <Input
-                  value={formData.projectId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, projectId: e.target.value })
+                <Select
+                  value={formData.projectId || undefined}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, projectId: value })
                   }
-                  placeholder="Project ID"
-                  className="mt-1"
-                />
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects
+                      .filter(
+                        (project) => project._id && project._id.trim() !== ""
+                      )
+                      .map((project) => (
+                        <SelectItem key={project._id} value={project._id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Attendees are auto-filled from the client team for this
+                  project.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -195,7 +347,7 @@ export default function MeetingsPage() {
                 />
               </div>
               <Button onClick={handleCreateMeeting} className="w-full">
-                Schedule
+                {editingId ? "Update Meeting" : "Schedule"}
               </Button>
             </div>
           </DialogContent>
@@ -220,14 +372,20 @@ export default function MeetingsPage() {
                       <h3 className="font-semibold text-foreground">
                         {meeting.title}
                       </h3>
-                      <Badge className={getStatusColor(meeting.status)}>
-                        {meeting.status}
+                      <Badge
+                        className={getStatusColor(
+                          meeting.status || "scheduled"
+                        )}
+                      >
+                        {meeting.status || "scheduled"}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        {new Date(meeting.date).toLocaleDateString()}
+                        {meeting.date
+                          ? new Date(meeting.date).toLocaleDateString()
+                          : "TBD"}
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
@@ -235,15 +393,26 @@ export default function MeetingsPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        {meeting.attendees.length} attendees
+                        {meeting.attendees?.length || 0} attendees
                       </div>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Attendees: {renderAttendees(meeting)}
+                    </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(meeting)}
+                    >
                       <Edit2 className="h-3 w-3" />
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(meeting._id)}
+                    >
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
@@ -276,14 +445,20 @@ export default function MeetingsPage() {
                       <h3 className="font-semibold text-foreground">
                         {meeting.title}
                       </h3>
-                      <Badge className={getStatusColor(meeting.status)}>
-                        {meeting.status}
+                      <Badge
+                        className={getStatusColor(
+                          meeting.status || "scheduled"
+                        )}
+                      >
+                        {meeting.status || "scheduled"}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        {new Date(meeting.date).toLocaleDateString()}
+                        {meeting.date
+                          ? new Date(meeting.date).toLocaleDateString()
+                          : "TBD"}
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
@@ -295,6 +470,22 @@ export default function MeetingsPage() {
                         Notes: {meeting.notes}
                       </p>
                     )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(meeting)}
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(meeting._id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   </div>
                 </div>
               </Card>

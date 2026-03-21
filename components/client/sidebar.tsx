@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
+import { buildAuthHeaders } from "@/lib/client-auth";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -114,10 +115,14 @@ export function ClientSidebar() {
   const fetchNotifications = async (userId: string) => {
     try {
       const res = await fetch(
-        `/api/notifications?userId=${encodeURIComponent(userId)}`
+        `/api/notifications?userId=${encodeURIComponent(userId)}`,
+        {
+          headers: buildAuthHeaders(),
+        }
       );
       const json = await res.json();
-      if (json.notifications) setNotifications(json.notifications);
+      const payload = json?.data || {};
+      if (payload.notifications) setNotifications(payload.notifications);
     } catch (e) {
       console.error("Failed to fetch notifications", e);
     }
@@ -126,7 +131,7 @@ export function ClientSidebar() {
   const markAsRead = async (id: string) => {
     await fetch("/api/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "mark-read", notificationId: id }),
     });
     setNotifications((s) =>
@@ -137,7 +142,7 @@ export function ClientSidebar() {
   const deleteNotif = async (id: string) => {
     await fetch("/api/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "delete", notificationId: id }),
     });
     setNotifications((s) => s.filter((n) => n.id !== id));
@@ -150,9 +155,14 @@ export function ClientSidebar() {
 
   const startSSE = (userId: string) => {
     try {
-      const src = new EventSource(
-        `/api/notifications/stream?userId=${encodeURIComponent(userId)}`
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      const url = new URL(
+        `/api/notifications/stream?userId=${encodeURIComponent(userId)}`,
+        window.location.origin
       );
+      if (token) url.searchParams.set("token", token);
+      const src = new EventSource(url.toString());
       src.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
@@ -258,7 +268,9 @@ export function ClientSidebar() {
                         if (!user) return;
                         await fetch("/api/notifications", {
                           method: "POST",
-                          headers: { "Content-Type": "application/json" },
+                          headers: buildAuthHeaders({
+                            "Content-Type": "application/json",
+                          }),
                           body: JSON.stringify({
                             action: "mark-all-read",
                             userId: user._id,

@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useScrollContext } from "@/lib/providers/scroll/scroll-context";
 import styles from "styles/modules/skills.module.css";
-import { skillsText } from "@/lib/constants/app/skills";
+import { skillsText } from "@/lib/landing_Data";
 import SnakeRoadmap from "./snake-roadmap";
 
 const opacityForBlock = (sectionProgress: number, blockNumber: number) => {

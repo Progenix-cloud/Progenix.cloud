@@ -1,11 +1,14 @@
 "use client";
 
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ClientSidebar } from "@/components/client/sidebar";
 import { Spinner } from "@/components/ui/spinner";
+import { useAuthSession } from "@/lib/hooks/useAuthSession";
 
 export default function ClientLayout({
   children,
@@ -13,51 +16,23 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, loading, isAuthenticated } = useAuthSession();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    const verifyAuth = async () => {
-      try {
-        const token = localStorage.getItem("authToken");
-        const userStr = localStorage.getItem("user");
+    if (loading) return;
+    if (!isAuthenticated) {
+      router.push("/auth/login");
+      return;
+    }
+    if (user?.role !== "client") {
+      router.push("/admin/dashboard");
+      return;
+    }
+    setIsAuthorized(true);
+  }, [loading, isAuthenticated, user, router]);
 
-        if (!token || !userStr) {
-          router.push("/auth/login");
-          return;
-        }
-
-        const user = JSON.parse(userStr);
-
-        // Check if user is client
-        if (user.role !== "client") {
-          router.push("/admin/dashboard");
-          return;
-        }
-
-        const response = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        });
-
-        if (response.ok) {
-          setIsAuthorized(true);
-        } else {
-          router.push("/auth/login");
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        router.push("/auth/login");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    verifyAuth();
-  }, [router]);
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner className="h-8 w-8" />

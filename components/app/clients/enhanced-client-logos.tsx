@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { clients } from "@/lib/constants/app/clients";
+import { clients } from "@/lib/landing_Data";
 
 const EnhancedClientLogos = () => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);

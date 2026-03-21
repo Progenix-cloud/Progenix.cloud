@@ -14,19 +14,96 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TrendingUp, Target, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
+import { buildAuthHeaders } from "@/lib/client-auth";
+
+interface AnalyticsData {
+  metrics: {
+    onTimeDelivery: number;
+    avgCompletionTime: number;
+    budgetAdherence: number;
+    clientSatisfaction: number;
+  };
+  charts: {
+    projectTrendData: Array<{
+      month: string;
+      completed: number;
+      inProgress: number;
+      planning: number;
+    }>;
+    taskCompletionData: Array<{
+      week: string;
+      completed: number;
+      pending: number;
+      overdue: number;
+    }>;
+  };
+}
 
 export default function AnalyticsPage() {
-  const projectTrendData = [
-    { month: "Jan", completed: 2, inProgress: 1, planning: 1 },
-    { month: "Feb", completed: 3, inProgress: 2, planning: 1 },
-    { month: "Mar", completed: 3, inProgress: 3, planning: 1 },
-  ];
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const taskCompletionData = [
-    { week: "W1", completed: 45, pending: 15, overdue: 5 },
-    { week: "W2", completed: 52, pending: 18, overdue: 3 },
-    { week: "W3", completed: 58, pending: 12, overdue: 2 },
-  ];
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const response = await fetch("/api/analytics", {
+          headers: buildAuthHeaders(),
+        });
+        if (!response.ok) throw new Error("Failed to fetch analytics");
+        const result = await response.json();
+        if (result.success) {
+          setData(result.data);
+        } else {
+          throw new Error(result.error || "Failed to fetch data");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-96 mb-8"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-80 bg-gray-200 rounded"></div>
+            <div className="h-80 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            Error Loading Analytics
+          </h1>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const { metrics, charts } = data;
 
   return (
     <div className="p-8 space-y-6">
@@ -43,8 +120,12 @@ export default function AnalyticsPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-muted-foreground">On-Time Delivery</p>
-              <p className="text-3xl font-bold text-foreground mt-2">92%</p>
-              <p className="text-xs text-green-600 mt-2">+4% vs last quarter</p>
+              <p className="text-3xl font-bold text-foreground mt-2">
+                {metrics.onTimeDelivery}%
+              </p>
+              <p className="text-xs text-green-600 mt-2">
+                Based on completed projects
+              </p>
             </div>
             <div className="p-3 bg-green-500/10 rounded-lg">
               <TrendingUp className="h-6 w-6 text-green-600" />
@@ -58,11 +139,15 @@ export default function AnalyticsPage() {
               <p className="text-sm text-muted-foreground">
                 Avg Completion Time
               </p>
-              <p className="text-3xl font-bold text-foreground mt-2">18 days</p>
-              <p className="text-xs text-green-600 mt-2">-2 days improvement</p>
+              <p className="text-3xl font-bold text-foreground mt-2">
+                {metrics.avgCompletionTime} days
+              </p>
+              <p className="text-xs text-blue-600 mt-2">
+                Project duration average
+              </p>
             </div>
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <Activity className="h-6 w-6 text-green-600" />
+            <div className="p-3 bg-blue-500/10 rounded-lg">
+              <Activity className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </Card>
@@ -71,9 +156,11 @@ export default function AnalyticsPage() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Budget Adherence</p>
-              <p className="text-3xl font-bold text-foreground mt-2">89%</p>
+              <p className="text-3xl font-bold text-foreground mt-2">
+                {metrics.budgetAdherence}%
+              </p>
               <p className="text-xs text-yellow-600 mt-2">
-                3% under budget avg
+                Projects within budget
               </p>
             </div>
             <div className="p-3 bg-yellow-500/10 rounded-lg">
@@ -88,10 +175,10 @@ export default function AnalyticsPage() {
               <p className="text-sm text-muted-foreground">
                 Client Satisfaction
               </p>
-              <p className="text-3xl font-bold text-foreground mt-2">4.7/5</p>
-              <p className="text-xs text-green-600 mt-2">
-                +0.2 pts improvement
+              <p className="text-3xl font-bold text-foreground mt-2">
+                {metrics.clientSatisfaction}/5
               </p>
+              <p className="text-xs text-green-600 mt-2">Average rating</p>
             </div>
             <div className="p-3 bg-primary/10 rounded-lg">
               <TrendingUp className="h-6 w-6 text-primary" />
@@ -107,7 +194,7 @@ export default function AnalyticsPage() {
             Project Status Trend
           </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={projectTrendData}>
+            <BarChart data={charts.projectTrendData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -125,7 +212,7 @@ export default function AnalyticsPage() {
             Task Completion Rate
           </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={taskCompletionData}>
+            <LineChart data={charts.taskCompletionData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="week" />
               <YAxis />

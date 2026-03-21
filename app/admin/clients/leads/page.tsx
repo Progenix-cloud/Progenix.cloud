@@ -17,8 +17,11 @@ import {
   X,
   Edit,
   Trash2,
+  Briefcase,
 } from "lucide-react";
 import LeadDetailModal from "@/components/admin/lead-detail-modal";
+import CreateLeadModal from "@/components/admin/create-lead-modal";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 interface Lead {
   _id: string;
@@ -51,6 +54,7 @@ interface Lead {
   proposalSent?: boolean;
   pricingModel?: string;
   expectedCloseDate?: string;
+  actualCloseDate?: string;
   marginPercentage?: number;
   painSeverityScore?: number;
   technicalComplexity?: "Low" | "Medium" | "High";
@@ -63,6 +67,7 @@ export default function LeadsPage() {
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -82,10 +87,13 @@ export default function LeadsPage() {
       if (statusFilter) params.append("status", statusFilter);
       if (fitScoreFilter) params.append("fitScore", fitScoreFilter);
 
-      const response = await fetch(`/api/leads?${params.toString()}`);
+      const response = await fetch(`/api/leads?${params.toString()}`, {
+        headers: buildAuthHeaders(),
+      });
       const data = await response.json();
-      setLeads(data.leads || []);
-      setFilteredLeads(data.leads || []);
+      const items = data?.data?.items || data?.data || data?.leads || [];
+      setLeads(items);
+      setFilteredLeads(items);
     } catch (error) {
       console.error("Error fetching leads:", error);
     } finally {
@@ -105,7 +113,10 @@ export default function LeadsPage() {
   const handleDeleteLead = async (leadId: string) => {
     if (confirm("Are you sure you want to delete this lead?")) {
       try {
-        await fetch(`/api/leads/${leadId}`, { method: "DELETE" });
+        await fetch(`/api/leads/${leadId}`, {
+          method: "DELETE",
+          headers: buildAuthHeaders(),
+        });
         setLeads(leads.filter((l) => l._id !== leadId));
         setFilteredLeads(filteredLeads.filter((l) => l._id !== leadId));
       } catch (error) {
@@ -154,14 +165,14 @@ export default function LeadsPage() {
             Manage all leads from acquisition to revenue ({leads.length} total)
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4" />
           Add New Lead
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="all-leads" className="flex items-center gap-2">
             <Database className="w-4 h-4" />
             <span className="hidden sm:inline">All Leads</span>
@@ -184,6 +195,10 @@ export default function LeadsPage() {
           <TabsTrigger value="scoring" className="flex items-center gap-2">
             <Filter className="w-4 h-4" />
             <span className="hidden sm:inline">Scoring</span>
+          </TabsTrigger>
+          <TabsTrigger value="converted" className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4" />
+            <span className="hidden sm:inline">Converted</span>
           </TabsTrigger>
         </TabsList>
 
@@ -741,6 +756,98 @@ export default function LeadsPage() {
             </div>
           </Card>
         </TabsContent>
+
+        {/* CONVERTED CLIENTS TAB */}
+        <TabsContent value="converted" className="space-y-6 mt-6">
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold text-foreground mb-4">
+              Converted Clients
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4 font-semibold">
+                      Client Name
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold">
+                      Company
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold">Email</th>
+                    <th className="text-left py-3 px-4 font-semibold">Phone</th>
+                    <th className="text-left py-3 px-4 font-semibold">
+                      Project Value
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold">
+                      Close Date
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold">
+                      Payment Status
+                    </th>
+                    <th className="text-left py-3 px-4 font-semibold">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leads
+                    .filter((l) => l.status === "Closed")
+                    .map((lead) => (
+                      <tr key={lead._id} className="border-b hover:bg-muted/50">
+                        <td className="py-4 px-4">
+                          <p className="font-medium">{lead.fullName}</p>
+                        </td>
+                        <td className="py-4 px-4">{lead.company}</td>
+                        <td className="py-4 px-4 text-xs">{lead.email}</td>
+                        <td className="py-4 px-4">{lead.phone || "—"}</td>
+                        <td className="py-4 px-4 font-semibold">
+                          {lead.projectValue
+                            ? `₹${lead.projectValue.toLocaleString()}`
+                            : "—"}
+                        </td>
+                        <td className="py-4 px-4 text-xs">
+                          {lead.actualCloseDate
+                            ? new Date(
+                                lead.actualCloseDate
+                              ).toLocaleDateString()
+                            : "—"}
+                        </td>
+                        <td className="py-4 px-4">
+                          <Badge
+                            variant={
+                              lead.paymentStatus === "Complete"
+                                ? "default"
+                                : lead.paymentStatus === "Partial"
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                          >
+                            {lead.paymentStatus || "—"}
+                          </Badge>
+                        </td>
+                        <td className="py-4 px-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenDetails(lead)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              {leads.filter((l) => l.status === "Closed").length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">
+                    No converted clients yet
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Lead Detail Modal */}
@@ -761,6 +868,15 @@ export default function LeadsPage() {
           }}
         />
       )}
+
+      <CreateLeadModal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={(newLead) => {
+          setLeads((prev) => [newLead, ...prev]);
+          setShowCreateModal(false);
+        }}
+      />
     </div>
   );
 }

@@ -4,17 +4,21 @@ import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { buildAuthHeaders } from "@/lib/client-auth";
+import { toast } from "sonner";
 
 export default function CreateNotificationPage() {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [publishAll, setPublishAll] = useState(true);
+  const [target, setTarget] = useState<
+    "all" | "admins" | "clients" | "both" | "users"
+  >("all");
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const res = await fetch("/api/clients");
+      const res = await fetch("/api/users", { headers: buildAuthHeaders() });
       const json = await res.json();
       if (json.success) setUsers(json.data || []);
     };
@@ -22,24 +26,33 @@ export default function CreateNotificationPage() {
   }, []);
 
   const submit = async () => {
-    const payload: any = { title, message, type: "message" };
-    if (publishAll) payload.target = "all";
-    else {
-      payload.target = "users";
+    if (!title.trim() || !message.trim()) {
+      toast.error("Title and message are required");
+      return;
+    }
+
+    if (target === "users" && selectedUsers.length === 0) {
+      toast.error("Select at least one user for custom recipients");
+      return;
+    }
+
+    const payload: any = { title, message, type: "message", target };
+    if (target === "users") {
       payload.userIds = selectedUsers;
     }
 
     const res = await fetch("/api/admin/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
     const json = await res.json();
     if (json.success) {
-      alert(`Created ${json.createdCount || 0} notifications`);
+      const createdCount = json?.data?.createdCount || 0;
+      toast.success(`Created ${createdCount} notifications`);
       window.location.href = "/admin/notifications";
     } else {
-      alert("Failed to create notification");
+      toast.error("Failed to create notification");
     }
   };
 
@@ -65,27 +78,28 @@ export default function CreateNotificationPage() {
           placeholder="Message"
         />
 
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              checked={publishAll}
-              onChange={() => setPublishAll(true)}
-            />
-            <span>Publish to all users</span>
-          </label>
-
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              checked={!publishAll}
-              onChange={() => setPublishAll(false)}
-            />
-            <span>Publish to selected clients</span>
-          </label>
+        <div className="flex flex-wrap items-center gap-4">
+          {[
+            { value: "all", label: "Publish to all users" },
+            { value: "admins", label: "Publish to admins only" },
+            { value: "clients", label: "Publish to clients only" },
+            { value: "both", label: "Publish to admins and clients" },
+            { value: "users", label: "Publish to selected users" },
+          ].map((option) => (
+            <label key={option.value} className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="notification-target"
+                value={option.value}
+                checked={target === option.value}
+                onChange={() => setTarget(option.value as any)}
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
         </div>
 
-        {!publishAll && (
+        {target === "users" && (
           <div className="grid grid-cols-2 gap-2 max-h-48 overflow-auto border p-2">
             {users.map((u) => (
               <label key={u._id} className="flex items-center gap-2">

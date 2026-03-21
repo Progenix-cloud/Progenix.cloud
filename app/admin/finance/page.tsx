@@ -17,8 +17,30 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { DollarSign, TrendingUp, TrendingDown, FileText } from "lucide-react";
+import {
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  FileText,
+  Edit,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { apiService } from "@/lib/api-service";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 interface Invoice {
   _id: string;
@@ -36,6 +58,19 @@ export default function FinancePage() {
     totalRevenue: 0,
     pendingPayments: 0,
     paidInvoices: 0,
+  });
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    amount: 0,
+    status: "",
+    dueDate: "",
+  });
+  const [createForm, setCreateForm] = useState({
+    invoiceNumber: "",
+    amount: 0,
+    status: "pending",
+    dueDate: "",
   });
 
   useEffect(() => {
@@ -64,6 +99,103 @@ export default function FinancePage() {
     loadData();
   }, []);
 
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setEditForm({
+      amount: invoice.amount,
+      status: invoice.status,
+      dueDate: new Date(invoice.dueDate).toISOString().split("T")[0],
+    });
+  };
+
+  const handleSaveInvoice = async () => {
+    if (!editingInvoice) return;
+
+    try {
+      const response = await fetch(`/api/invoices/${editingInvoice._id}`, {
+        method: "PUT",
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          amount: editForm.amount,
+          status: editForm.status,
+          dueDate: new Date(editForm.dueDate),
+        }),
+      });
+
+      if (response.ok) {
+        setEditingInvoice(null);
+        // Refresh data
+        const invoicesData = await apiService.getInvoices();
+        setInvoices(invoicesData);
+        // Recalculate stats
+        const totalRevenue = invoicesData.reduce(
+          (sum: number, inv: any) => sum + inv.amount,
+          0
+        );
+        const pending = invoicesData.filter(
+          (inv: any) => inv.status === "pending"
+        );
+        const paid = invoicesData.filter((inv: any) => inv.status === "paid");
+
+        setStats({
+          totalRevenue,
+          pendingPayments: pending.reduce(
+            (sum: number, inv: any) => sum + inv.amount,
+            0
+          ),
+          paidInvoices: paid.length,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update invoice:", error);
+    }
+  };
+
+  const handleCreateInvoice = async () => {
+    if (!createForm.invoiceNumber.trim()) return;
+    try {
+      const response = await fetch("/api/invoices", {
+        method: "POST",
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          invoiceNumber: createForm.invoiceNumber.trim(),
+          amount: createForm.amount,
+          status: createForm.status,
+          dueDate: createForm.dueDate || undefined,
+        }),
+      });
+      if (response.ok) {
+        setIsCreateOpen(false);
+        setCreateForm({
+          invoiceNumber: "",
+          amount: 0,
+          status: "pending",
+          dueDate: "",
+        });
+        const invoicesData = await apiService.getInvoices();
+        setInvoices(invoicesData);
+        const totalRevenue = invoicesData.reduce(
+          (sum: number, inv: any) => sum + inv.amount,
+          0
+        );
+        const pending = invoicesData.filter(
+          (inv: any) => inv.status === "pending"
+        );
+        const paid = invoicesData.filter((inv: any) => inv.status === "paid");
+        setStats({
+          totalRevenue,
+          pendingPayments: pending.reduce(
+            (sum: number, inv: any) => sum + inv.amount,
+            0
+          ),
+          paidInvoices: paid.length,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to create invoice:", error);
+    }
+  };
+
   const statusDistribution = [
     {
       name: "Paid",
@@ -77,11 +209,55 @@ export default function FinancePage() {
     },
   ];
 
-  const revenueByMonth = [
-    { month: "Jan", revenue: 45000, pending: 15000 },
-    { month: "Feb", revenue: 52000, pending: 20000 },
-    { month: "Mar", revenue: 48000, pending: 25000 },
-  ];
+  // Calculate revenue by month from real invoice data
+  const revenueByMonth = (() => {
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+
+    // Get last 3 months
+    const months = [];
+    for (let i = 2; i >= 0; i--) {
+      const date = new Date(currentYear, currentDate.getMonth() - i, 1);
+      months.push({
+        month: monthNames[date.getMonth()],
+        year: date.getFullYear(),
+        monthIndex: date.getMonth(),
+      });
+    }
+
+    return months.map(({ month, year, monthIndex }) => {
+      const monthInvoices = invoices.filter((inv) => {
+        const invDate = new Date(inv.issuedDate || inv.dueDate);
+        return (
+          invDate.getMonth() === monthIndex && invDate.getFullYear() === year
+        );
+      });
+
+      const revenue = monthInvoices
+        .filter((inv) => inv.status === "paid")
+        .reduce((sum, inv) => sum + inv.amount, 0);
+
+      const pending = monthInvoices
+        .filter((inv) => inv.status === "pending")
+        .reduce((sum, inv) => sum + inv.amount, 0);
+
+      return { month, revenue, pending };
+    });
+  })();
 
   const getStatusColor = (status: string) => {
     return status === "paid"
@@ -91,11 +267,17 @@ export default function FinancePage() {
 
   return (
     <div className="p-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Finance</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor revenue, invoices, and financial metrics
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Finance</h1>
+          <p className="text-muted-foreground mt-2">
+            Monitor revenue, invoices, and financial metrics
+          </p>
+        </div>
+        <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+          <FileText className="h-4 w-4" />
+          New Invoice
+        </Button>
       </div>
 
       {/* Stat Cards */}
@@ -244,9 +426,10 @@ export default function FinancePage() {
                       variant="outline"
                       size="sm"
                       className="gap-2 bg-transparent"
+                      onClick={() => handleEditInvoice(invoice)}
                     >
-                      <FileText className="h-3 w-3" />
-                      View
+                      <Edit className="h-3 w-3" />
+                      Edit
                     </Button>
                   </td>
                 </tr>
@@ -255,6 +438,143 @@ export default function FinancePage() {
           </table>
         </div>
       </Card>
+
+      {/* Create Invoice Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="create-number">Invoice Number</Label>
+              <Input
+                id="create-number"
+                value={createForm.invoiceNumber}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    invoiceNumber: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="create-amount">Amount</Label>
+              <Input
+                id="create-amount"
+                type="number"
+                value={createForm.amount}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    amount: parseFloat(e.target.value) || 0,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="create-status">Status</Label>
+              <Select
+                value={createForm.status}
+                onValueChange={(value) =>
+                  setCreateForm((prev) => ({ ...prev, status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="create-dueDate">Due Date</Label>
+              <Input
+                id="create-dueDate"
+                type="date"
+                value={createForm.dueDate}
+                onChange={(e) =>
+                  setCreateForm((prev) => ({
+                    ...prev,
+                    dueDate: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <Button onClick={handleCreateInvoice} className="w-full">
+              Create Invoice
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Invoice Dialog */}
+      <Dialog
+        open={!!editingInvoice}
+        onOpenChange={() => setEditingInvoice(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-amount">Amount</Label>
+              <Input
+                id="edit-amount"
+                type="number"
+                value={editForm.amount}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    amount: parseFloat(e.target.value) || 0,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-status">Status</Label>
+              <Select
+                value={editForm.status}
+                onValueChange={(value) =>
+                  setEditForm((prev) => ({ ...prev, status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-dueDate">Due Date</Label>
+              <Input
+                id="edit-dueDate"
+                type="date"
+                value={editForm.dueDate}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, dueDate: e.target.value }))
+                }
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSaveInvoice} className="flex-1">
+                Save Changes
+              </Button>
+              <Button variant="outline" onClick={() => setEditingInvoice(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

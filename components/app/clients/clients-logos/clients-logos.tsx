@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import SliderContainer from "components/app/clients/slider-container/slider-container";
 import SliderItem from "components/app/clients/slider-item/slider-item";
-import { clients } from "@/lib/constants/app/clients";
+import { clients } from "@/lib/landing_Data";
 
 const ClientsLogos = async () => {
   return (

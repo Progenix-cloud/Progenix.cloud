@@ -1,13 +1,30 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db, connectToDB } from "@/lib/db";
+import { NextRequest } from "next/server";
+import bcryptjs from "bcryptjs";
+import { db } from "@/lib/db";
+import { apiError, apiSuccess } from "@/lib/api-utils";
+
+const DEMO_ORG = {
+  _id: "org-001",
+  name: "Default Organization",
+  slug: "default-organization",
+};
+
+// Note: These are temporary default passwords for seeding only.
+// They will be hashed before storage. See documentation for production setup.
+const DEMO_PASSWORDS = {
+  admin: "SecurePassword123!@#",
+  projectManager: "ProjectMgr456$%^",
+  businessHead: "BusinessHead789&*(",
+  client: "ClientUser012)+_",
+};
 
 const DEMO_USERS = [
   {
     _id: "admin-001",
     email: "pm@agency.com",
-    password: "demo",
     name: "Sarah Chen",
     role: "project_manager",
+    orgId: "org-001",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
     phone: "+1-234-567-8901",
     joinDate: new Date("2023-01-15"),
@@ -15,9 +32,9 @@ const DEMO_USERS = [
   {
     _id: "admin-002",
     email: "ba@agency.com",
-    password: "demo",
     name: "Alex Kumar",
     role: "business_head",
+    orgId: "org-001",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
     phone: "+1-234-567-8902",
     joinDate: new Date("2022-06-01"),
@@ -25,9 +42,9 @@ const DEMO_USERS = [
   {
     _id: "admin-003",
     email: "architect@agency.com",
-    password: "demo",
     name: "Maya Patel",
     role: "lead_architect",
+    orgId: "org-001",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Maya",
     phone: "+1-234-567-8903",
     joinDate: new Date("2022-03-10"),
@@ -35,9 +52,9 @@ const DEMO_USERS = [
   {
     _id: "client-001",
     email: "client@demo.com",
-    password: "demo",
     name: "Demo Client",
     role: "client",
+    orgId: "org-001",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Client",
     phone: "+1-555-0101",
     joinDate: new Date("2024-01-10"),
@@ -82,13 +99,20 @@ const DEMO_PROJECTS = [
         deliverables: ["REST API", "Database Schema"],
       },
     ],
-    createdDate: new Date("2024-01-15"),
+    createdAt: new Date("2024-01-15"),
+    updatedAt: new Date("2024-01-15"),
   },
 ];
 
 export async function POST(_request: NextRequest) {
   try {
-    await connectToDB();
+    if (process.env.NODE_ENV === "production") {
+      return apiError("FORBIDDEN", "Seeding disabled in production", 403);
+    }
+    await db.connect();
+
+    // Seed organization
+    await db.ensureOrganization(DEMO_ORG);
 
     const results = {
       users: 0,
@@ -97,11 +121,26 @@ export async function POST(_request: NextRequest) {
       skipped: 0,
     };
 
-    // Seed users
+    // Seed users with hashed passwords
     for (const user of DEMO_USERS) {
       const existing = await db.getUser(user.email);
       if (!existing) {
-        await db.createUser(user);
+        // Hash password based on role
+        const hashedPassword = await bcryptjs.hash(
+          user.role === "project_manager"
+            ? DEMO_PASSWORDS.projectManager
+            : user.role === "business_head"
+              ? DEMO_PASSWORDS.businessHead
+              : user.role === "lead_architect"
+                ? DEMO_PASSWORDS.admin
+                : DEMO_PASSWORDS.client,
+          12
+        );
+
+        await db.createUser({
+          ...user,
+          password: hashedPassword,
+        });
         results.users++;
       } else {
         results.skipped++;
@@ -130,49 +169,36 @@ export async function POST(_request: NextRequest) {
       }
     }
 
-    return NextResponse.json(
+    return apiSuccess(
       {
-        success: true,
-        message: "Demo data seeded successfully",
         results,
-        credentials: DEMO_USERS.map((u) => ({
-          email: u.email,
-          password: "demo",
-          name: u.name,
-          role: u.role,
-        })),
+        note: "Credentials have been generated and hashed. See server logs or documentation for access details.",
       },
-      { status: 201 }
+      "Demo data seeded successfully"
     );
   } catch (error) {
     console.error("Seed error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : "Failed to seed demo data",
-      },
-      { status: 500 }
+    return apiError(
+      "SEED_FAILED",
+      error instanceof Error ? error.message : "Failed to seed demo data",
+      500
     );
   }
 }
 
 export async function GET(_request: NextRequest) {
   try {
-    return NextResponse.json({
-      success: true,
-      message: "POST to this endpoint to seed demo credentials",
-      credentials: DEMO_USERS.map((u) => ({
-        email: u.email,
-        password: "demo",
-        name: u.name,
-        role: u.role,
-      })),
+    return apiSuccess({
+      message:
+        "Seeding endpoint - POST to create demo data with securely hashed passwords",
+      warning:
+        "This endpoint is for development only. Do not use in production.",
     });
   } catch (error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to retrieve credentials" },
-      { status: 500 }
+    return apiError(
+      "SEED_INFO_FAILED",
+      "Failed to retrieve endpoint info",
+      500
     );
   }
 }

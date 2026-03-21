@@ -9,7 +9,7 @@ import MoFace from "public/team/mo-face.svg";
 import EricFace from "public/team/eric-face.svg";
 import MateiFace from "public/team/matei-face.svg";
 import ViktoriaFace from "public/team/viktoria-face.svg";
-import { description } from "@/lib/constants/app/landing";
+import { description } from "@/lib/landing_Data";
 
 const AboutTeam = () => {
   return (

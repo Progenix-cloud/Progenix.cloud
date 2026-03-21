@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import RoadmapCard from "./roadmap-card";
-import { roadmap } from "@/lib/constants/app/roadmap";
+import { roadmap } from "@/lib/landing_Data";
 
 const SnakeRoadmap = () => {
   const containerRef = useRef<HTMLDivElement>(null);

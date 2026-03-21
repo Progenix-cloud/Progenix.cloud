@@ -15,6 +15,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Settings, Lock, Users, Bell } from "lucide-react";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 type User = {
   _id?: string;
@@ -36,14 +37,52 @@ export default function SettingsPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const u = JSON.parse(userStr);
-      setUser(u);
-      setName(u.name || "");
-      setPhone(u.phone || "");
-      setRole(u.role || "");
-    }
+    const loadUserData = async () => {
+      try {
+        // First try to get user ID from localStorage
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+
+        const storedUser = JSON.parse(userStr);
+        if (!storedUser._id) return;
+
+        // Fetch fresh user data from API
+        const response = await fetch(`/api/users/${storedUser._id}`, {
+          headers: buildAuthHeaders(),
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const freshUser = result.data;
+            // Update localStorage with fresh data
+            localStorage.setItem("user", JSON.stringify(freshUser));
+            setUser(freshUser);
+            setName(freshUser.name || "");
+            setPhone(freshUser.phone || "");
+            setRole(freshUser.role || "");
+          }
+        } else {
+          // Fallback to localStorage data if API fails
+          setUser(storedUser);
+          setName(storedUser.name || "");
+          setPhone(storedUser.phone || "");
+          setRole(storedUser.role || "");
+        }
+      } catch (error) {
+        console.error("Failed to load user data:", error);
+        // Fallback to localStorage
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          const storedUser = JSON.parse(userStr);
+          setUser(storedUser);
+          setName(storedUser.name || "");
+          setPhone(storedUser.phone || "");
+          setRole(storedUser.role || "");
+        }
+      }
+    };
+
+    loadUserData();
   }, []);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +115,7 @@ export default function SettingsPage() {
 
       const res = await fetch(`/api/users/${user._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       const json = await res.json();

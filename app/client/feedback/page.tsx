@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,38 +14,83 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { apiService } from "@/lib/api-service";
+import { CardSkeleton } from "@/components/loading-skeleton";
+import { buildAuthHeaders, getStoredClientId } from "@/lib/client-auth";
+
+interface FeedbackItem {
+  id?: string;
+  _id?: string;
+  category: string;
+  rating: number;
+  message: string;
+  date?: string;
+  createdAt?: string;
+}
 
 export default function FeedbackPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [rating, setRating] = useState(0);
+  const [clientId, setClientId] = useState<string | null>(null);
 
-  const mockFeedback = [
-    {
-      id: "1",
-      date: "2024-01-20",
-      category: "communication",
-      rating: 5,
-      message:
-        "Excellent communication from the team. Very responsive to changes.",
-    },
-    {
-      id: "2",
-      date: "2024-01-15",
-      category: "quality",
-      rating: 4,
-      message:
-        "Code quality is good. Some minor improvements needed in documentation.",
-    },
-    {
-      id: "3",
-      date: "2024-01-10",
-      category: "timeline",
-      rating: 5,
-      message: "Project delivered on time. Great project management.",
-    },
-  ];
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setClientId(user.clientId);
+    }
+  }, []);
 
-  const renderStars = (rating: number, interactive = false) => {
+  const {
+    data: feedback = [],
+    isLoading,
+    mutate,
+  } = useSWR(clientId ? ["feedback", clientId] : null, () =>
+    apiService.getFeedback({ clientId: clientId as string })
+  );
+
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (rating < 1) {
+        toast.error("Please select a rating.");
+        return;
+      }
+      const resolvedClientId = clientId || getStoredClientId();
+      if (!resolvedClientId) {
+        toast.error("Missing client session");
+        return;
+      }
+      const formData = new FormData(e.target as HTMLFormElement);
+      const payload = {
+        clientId: resolvedClientId,
+        category: formData.get("category"),
+        rating,
+        message: formData.get("message"),
+        submittedAt: new Date(),
+      };
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+      if (response.ok) {
+        setIsOpen(false);
+        (e.target as HTMLFormElement).reset();
+        setRating(0);
+        mutate();
+        toast.success("Feedback submitted");
+      } else {
+        toast.error("Failed to submit feedback");
+      }
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+      toast.error("Failed to submit feedback");
+    }
+  };
+
+  const renderStars = (ratingValue: number, interactive = false) => {
     return (
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -52,10 +98,14 @@ export default function FeedbackPage() {
             key={star}
             onClick={() => interactive && setRating(star)}
             className="focus:outline-none"
+            aria-label={
+              interactive ? `Set rating ${star}` : `Rating ${star}`
+            }
+            type="button"
           >
             <Star
               className={`w-5 h-5 ${
-                star <= rating
+                star <= ratingValue
                   ? "fill-yellow-400 text-yellow-400"
                   : "text-gray-300"
               }`}
@@ -90,15 +140,19 @@ export default function FeedbackPage() {
                 project collaboration.
               </DialogDescription>
             </DialogHeader>
-            <form className="space-y-4">
+            <form onSubmit={handleSubmitFeedback} className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Category</label>
-                <select className="w-full px-3 py-2 border rounded mt-2">
-                  <option>Communication</option>
-                  <option>Quality</option>
-                  <option>Timeline</option>
-                  <option>Technical Skills</option>
-                  <option>Overall Experience</option>
+                <select
+                  name="category"
+                  className="w-full px-3 py-2 border rounded mt-2"
+                  required
+                >
+                  <option value="communication">Communication</option>
+                  <option value="quality">Quality</option>
+                  <option value="timeline">Timeline</option>
+                  <option value="technical">Technical Skills</option>
+                  <option value="overall">Overall Experience</option>
                 </select>
               </div>
               <div>
@@ -108,11 +162,13 @@ export default function FeedbackPage() {
               <div>
                 <label className="text-sm font-medium">Your Feedback</label>
                 <textarea
+                  name="message"
                   placeholder="Share your thoughts..."
                   className="w-full px-3 py-2 border rounded h-24 mt-2"
+                  required
                 />
               </div>
-              <Button onClick={() => setIsOpen(false)} className="w-full">
+              <Button type="submit" className="w-full">
                 Submit Feedback
               </Button>
             </form>
@@ -120,24 +176,34 @@ export default function FeedbackPage() {
         </Dialog>
       </div>
 
-      <div className="grid gap-6">
-        {mockFeedback.map((item) => (
-          <Card key={item.id}>
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <Badge variant="outline">{item.category}</Badge>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {new Date(item.date).toLocaleDateString()}
-                  </p>
+      {isLoading ? (
+        <div className="grid gap-4">
+          <CardSkeleton />
+        </div>
+      ) : feedback.length === 0 ? (
+        <Card className="p-12 text-center">
+          <p className="text-muted-foreground">No feedback yet</p>
+        </Card>
+      ) : (
+        <div className="grid gap-6">
+          {feedback.map((item: FeedbackItem) => (
+            <Card key={item.id || item._id}>
+              <CardContent className="pt-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <Badge variant="outline">{item.category}</Badge>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {new Date(item.date || item.createdAt || Date.now()).toLocaleDateString()}
+                    </p>
+                  </div>
+                  {renderStars(item.rating)}
                 </div>
-                {renderStars(item.rating)}
-              </div>
-              <p className="text-foreground">{item.message}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <p className="text-foreground">{item.message}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

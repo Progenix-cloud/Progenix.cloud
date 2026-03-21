@@ -1,24 +1,35 @@
-import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import fs from "fs";
 import path from "path";
+import { getUserFromHeader, hasPermission } from "@/lib/rbac";
+import { auditUpdate } from "@/lib/audit";
+import { apiError, apiSuccess, validateBody } from "@/lib/api-utils";
+import { z } from "zod";
+
+const updateSchema = z.record(z.any());
 
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  if (!id) return apiError("MISSING_ID", "Missing id", 400);
   try {
+    const session = await getUserFromHeader(req);
+    if (!session) {
+      return apiError("UNAUTHORIZED", "Unauthorized", 401);
+    }
+    const canRead =
+      session._id === id || hasPermission(session, "user", "read");
+    if (!canRead) {
+      return apiError("FORBIDDEN", "Forbidden", 403);
+    }
     const user = await db.getUserById(id);
     if (!user)
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    return NextResponse.json({ data: user });
+      return apiError("USER_NOT_FOUND", "User not found", 404);
+    return apiSuccess(user);
   } catch (err) {
-    return NextResponse.json(
-      { error: "Failed to fetch user" },
-      { status: 500 }
-    );
+    return apiError("USER_FETCH_FAILED", "Failed to fetch user", 500);
   }
 }
 
@@ -27,9 +38,18 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const { id } = params;
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+  if (!id) return apiError("MISSING_ID", "Missing id", 400);
   try {
-    const body = await req.json();
+    const session = await getUserFromHeader(req);
+    if (!session) {
+      return apiError("UNAUTHORIZED", "Unauthorized", 401);
+    }
+    const canUpdate =
+      session._id === id || hasPermission(session, "user", "admin");
+    if (!canUpdate) {
+      return apiError("FORBIDDEN", "Forbidden", 403);
+    }
+    const body = validateBody(updateSchema, await req.json());
     const updates: any = { ...body };
 
     // Handle avatarBase64 if provided (data:[mime];base64,xxxx)
@@ -52,16 +72,22 @@ export async function PUT(
     delete updates._id;
     delete updates.email;
 
+    const existing = await db.getUserById(id);
     const updated = await db.updateUser(id, updates);
     if (!updated)
-      return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+      return apiError("USER_UPDATE_FAILED", "Failed to update", 500);
 
-    return NextResponse.json({ data: updated });
+    await auditUpdate(session, "user", id, existing, updated, req);
+
+    return apiSuccess(updated, "User updated");
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Failed to update user" },
-      { status: 500 }
-    );
+    if (
+      err instanceof Error &&
+      err.message.toLowerCase().includes("validation")
+    ) {
+      return apiError("VALIDATION_ERROR", err.message, 400);
+    }
+    return apiError("USER_UPDATE_FAILED", "Failed to update user", 500);
   }
 }

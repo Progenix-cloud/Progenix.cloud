@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, AlertCircle, Info, Trash2 } from "lucide-react";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -12,10 +13,14 @@ export default function NotificationsPage() {
   const fetchNotifications = async (userId: string) => {
     try {
       const res = await fetch(
-        `/api/notifications?userId=${encodeURIComponent(userId)}`
+        `/api/notifications?userId=${encodeURIComponent(userId)}`,
+        {
+          headers: buildAuthHeaders(),
+        }
       );
       const json = await res.json();
-      if (json.notifications) setNotifications(json.notifications);
+      const payload = json?.data || {};
+      if (payload.notifications) setNotifications(payload.notifications);
     } catch (e) {
       console.error("Failed to fetch notifications", e);
     } finally {
@@ -52,7 +57,7 @@ export default function NotificationsPage() {
   const deleteNotification = async (id: string) => {
     await fetch("/api/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "delete", notificationId: id }),
     });
     setNotifications(notifications.filter((n) => n.id !== id));
@@ -82,7 +87,7 @@ export default function NotificationsPage() {
               const user = JSON.parse(userStr);
               await fetch("/api/notifications", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: buildAuthHeaders({ "Content-Type": "application/json" }),
                 body: JSON.stringify({
                   action: "mark-all-read",
                   userId: user._id,

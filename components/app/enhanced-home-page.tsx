@@ -59,24 +59,24 @@ const EnhancedHomePage = () => {
 
   return (
     <div className="relative">
-      {/* Top-right navigation for Admin and Client panels */}
+      {/* Top-right login/signup actions */}
       <header className="fixed top-4 right-4 z-50">
         <nav aria-label="Primary navigation">
           <ul className="flex items-center space-x-2 bg-white/80 dark:bg-black/60 backdrop-blur rounded-full p-1 shadow-sm">
             <li>
               <Link
-                href="/admin"
+                href="/auth/login"
                 className="px-3 py-1 rounded-full text-sm font-medium text-gray-700 hover:bg-blue-100 dark:text-gray-200 dark:hover:bg-white/5"
               >
-                Admin Panel
+                Log in
               </Link>
             </li>
             <li>
               <Link
-                href="/client"
+                href="/auth/register"
                 className="px-3 py-1 rounded-full text-sm font-medium text-gray-700 hover:bg-blue-100 dark:text-gray-200 dark:hover:bg-white/5"
               >
-                Client Panel
+                Sign up
               </Link>
             </li>
           </ul>

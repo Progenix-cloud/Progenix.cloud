@@ -8,7 +8,7 @@ import {
   FaChevronRight,
   FaStar,
 } from "react-icons/fa";
-import { reviews } from "@/lib/constants/app/testimonials";
+import { reviews } from "@/lib/landing_Data";
 
 const TestimonialCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);

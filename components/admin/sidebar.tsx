@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
+import { buildAuthHeaders } from "@/lib/client-auth";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ import {
   TrendingUp,
   Bell,
   LogOut,
+  Calendar,
+  CheckCircle,
 } from "lucide-react";
 
 const adminMenuItems = [
@@ -76,6 +79,24 @@ const adminMenuItems = [
     icon: DollarSign,
   },
   {
+    label: "Task Scheduling",
+    href: "/admin/task-scheduling",
+    icon: Calendar,
+    roles: ["project_manager"],
+  },
+  {
+    label: "Task Review",
+    href: "/admin/task-review",
+    icon: CheckCircle,
+    roles: ["project_manager"],
+  },
+  {
+    label: "Attendance",
+    href: "/admin/attendance",
+    icon: Users,
+    roles: ["project_manager"],
+  },
+  {
     label: "Core Member",
     href: "/admin/team",
     icon: Users,
@@ -114,10 +135,14 @@ export function AdminSidebar() {
   const fetchNotifications = async (userId: string) => {
     try {
       const res = await fetch(
-        `/api/notifications?userId=${encodeURIComponent(userId)}`
+        `/api/notifications?userId=${encodeURIComponent(userId)}`,
+        {
+          headers: buildAuthHeaders(),
+        }
       );
       const json = await res.json();
-      if (json.notifications) setNotifications(json.notifications);
+      const payload = json?.data || {};
+      if (payload.notifications) setNotifications(payload.notifications);
     } catch (e) {
       console.error("Failed to fetch notifications", e);
     }
@@ -128,9 +153,14 @@ export function AdminSidebar() {
 
   const startSSE = (userId: string) => {
     try {
-      const src = new EventSource(
-        `/api/notifications/stream?userId=${encodeURIComponent(userId)}`
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+      const url = new URL(
+        `/api/notifications/stream?userId=${encodeURIComponent(userId)}`,
+        window.location.origin
       );
+      if (token) url.searchParams.set("token", token);
+      const src = new EventSource(url.toString());
       src.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data);
@@ -174,7 +204,7 @@ export function AdminSidebar() {
   const markAsRead = async (id: string) => {
     await fetch("/api/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "mark-read", notificationId: id }),
     });
     setNotifications((s) =>
@@ -185,7 +215,7 @@ export function AdminSidebar() {
   const deleteNotif = async (id: string) => {
     await fetch("/api/notifications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ action: "delete", notificationId: id }),
     });
     setNotifications((s) => s.filter((n) => n.id !== id));
@@ -207,6 +237,9 @@ export function AdminSidebar() {
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-1">
           {adminMenuItems.map((item) => {
+            if (item.roles && (!user || !item.roles.includes(user.role))) {
+              return null;
+            }
             const Icon = item.icon;
             const isActive = pathname === item.href;
 
@@ -256,7 +289,9 @@ export function AdminSidebar() {
                           if (!user) return;
                           await fetch("/api/notifications", {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: buildAuthHeaders({
+                              "Content-Type": "application/json",
+                            }),
                             body: JSON.stringify({
                               action: "mark-all-read",
                               userId: user._id,

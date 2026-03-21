@@ -1,31 +1,40 @@
-import { bulkOperationsService } from '@/lib/bulk-operations';
-import { NextRequest, NextResponse } from 'next/server';
+import { bulkOperationsService } from "@/lib/bulk-operations";
+import { NextRequest } from "next/server";
+import { apiError, apiSuccess, validateBody, withRBAC } from "@/lib/api-utils";
+import { z } from "zod";
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { action, entity, ids, data } = body;
+const bodySchema = z.object({
+  action: z.string().min(1),
+  entity: z.string().min(1),
+  ids: z.array(z.string()).min(1),
+  data: z.record(z.any()).optional(),
+});
 
-    if (!action || !entity || !ids || !Array.isArray(ids)) {
-      return NextResponse.json(
-        { error: 'Missing required fields: action, entity, ids' },
-        { status: 400 }
-      );
+export const POST = withRBAC(
+  "admin",
+  "admin",
+  async (req: NextRequest) => {
+    try {
+      const body = await req.json();
+      const { action, entity, ids, data } = validateBody(bodySchema, body);
+
+      const result = await bulkOperationsService.execute({
+        action: action as any,
+        entity: entity as any,
+        ids,
+        data,
+      });
+
+      return apiSuccess(result, "Bulk operation completed");
+    } catch (error) {
+      console.error("[v0] Bulk operation error:", error);
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes("validation")
+      ) {
+        return apiError("VALIDATION_ERROR", error.message, 400);
+      }
+      return apiError("BULK_OPERATION_FAILED", "Bulk operation failed", 500);
     }
-
-    const result = await bulkOperationsService.execute({
-      action: action as any,
-      entity: entity as any,
-      ids,
-      data,
-    });
-
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('[v0] Bulk operation error:', error);
-    return NextResponse.json(
-      { error: 'Bulk operation failed' },
-      { status: 500 }
-    );
   }
-}
+);

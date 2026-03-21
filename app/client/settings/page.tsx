@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 export default function ClientSettingsPage() {
   const [user, setUser] = useState<any | null>(null);
@@ -49,7 +50,7 @@ export default function ClientSettingsPage() {
 
       const res = await fetch(`/api/users/${user._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(payload),
       });
       const json = await res.json();

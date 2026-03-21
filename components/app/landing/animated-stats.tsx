@@ -3,20 +3,9 @@
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import CountUp from "react-countup";
+import { stats } from "@/lib/landing_Data";
 
-interface StatItem {
-  value: number;
-  suffix: string;
-  label: string;
-  description: string;
-}
 
-const stats: StatItem[] = [
-  { value: 258, suffix: "", label: "React Native Commits", description: "Core contributions" },
-  { value: 29, suffix: "M+", label: "Downloads", description: "Open source impact" },
-  { value: 500, suffix: "+", label: "Projects Delivered", description: "Successful deployments" },
-  { value: 50, suffix: "+", label: "Happy Clients", description: "Satisfied partners" },
-];
 
 const AnimatedStats = () => {
   const [hasAnimated, setHasAnimated] = useState(false);

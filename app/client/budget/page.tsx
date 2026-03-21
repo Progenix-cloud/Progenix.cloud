@@ -1,6 +1,17 @@
-'use client';
+"use client";
 
-import { Card } from '@/components/ui/card';
+import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import {
   BarChart,
   Bar,
@@ -12,26 +23,71 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-} from 'recharts';
-import { TrendingUp } from 'lucide-react';
+} from "recharts";
+import { TrendingUp } from "lucide-react";
+import { apiService } from "@/lib/api-service";
+import { CardSkeleton } from "@/components/loading-skeleton";
+
+interface BudgetProject {
+  project: string;
+  budget: number;
+  spent: number;
+  remaining: number;
+}
 
 export default function BudgetPage() {
-  const budgetData = [
-    { project: 'E-Commerce', budget: 50000, spent: 35000, remaining: 15000 },
-    { project: 'Mobile App', budget: 75000, spent: 25000, remaining: 50000 },
-    { project: 'Analytics', budget: 45000, spent: 0, remaining: 45000 },
-    { project: 'Healthcare', budget: 120000, spent: 60000, remaining: 60000 },
-  ];
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
 
-  const spendingTrend = [
-    { month: 'Jan', spent: 25000, budget: 30000 },
-    { month: 'Feb', spent: 52000, budget: 55000 },
-    { month: 'Mar', spent: 48000, budget: 50000 },
-  ];
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      setClientId(user.clientId);
+    }
+  }, []);
+
+  const resolvedClientId = clientId;
+  const { data: projects = [], isValidating: projectsValidating } = useSWR(
+    resolvedClientId ? ["projects", resolvedClientId] : null,
+    () => apiService.getProjects({ clientId: resolvedClientId as string })
+  );
+
+  const filteredProjects = projectId
+    ? projects.filter((p: any) => p._id === projectId)
+    : projects;
+
+  const isLoading = !resolvedClientId || projectsValidating;
+
+  const budgetData: BudgetProject[] = useMemo(() => {
+    return filteredProjects.map((p: any) => ({
+      project: p.name,
+      budget: p.budget || 0,
+      spent: p.spent || 0,
+      remaining: (p.budget || 0) - (p.spent || 0),
+    }));
+  }, [filteredProjects]);
 
   const totalBudget = budgetData.reduce((sum, p) => sum + p.budget, 0);
   const totalSpent = budgetData.reduce((sum, p) => sum + p.spent, 0);
-  const percentUsed = Math.round((totalSpent / totalBudget) * 100);
+  const percentUsed =
+    budgetData.length > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="p-8 space-y-6">
+        <div>
+          <div className="h-8 w-40 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-44 bg-muted rounded mt-2 animate-pulse" />
+        </div>
+        <div className="grid gap-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <CardSkeleton key={index} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-6">
@@ -42,7 +98,27 @@ export default function BudgetPage() {
         </p>
       </div>
 
-      {/* Summary */}
+      {/* Project Filter */}
+      <div className="flex items-center gap-4 mb-6">
+        <Label className="text-sm font-medium">Filter by Project:</Label>
+        <Select
+          value={projectId || ""}
+          onValueChange={(value) => setProjectId(value || null)}
+        >
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="All Projects" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Projects</SelectItem>
+            {projects.map((project: any) => (
+              <SelectItem key={project._id} value={project._id}>
+                {project.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-6">
           <div className="flex items-start justify-between">
@@ -87,7 +163,6 @@ export default function BudgetPage() {
         </Card>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">
@@ -108,10 +183,16 @@ export default function BudgetPage() {
 
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4">
-            Monthly Spending Trend
+            Spending Trend
           </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={spendingTrend}>
+            <LineChart
+              data={budgetData.map((p) => ({
+                month: p.project.substring(0, 3),
+                spent: p.spent,
+                budget: p.budget,
+              }))}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
@@ -124,7 +205,6 @@ export default function BudgetPage() {
         </Card>
       </div>
 
-      {/* Project Budget Details */}
       <Card className="overflow-hidden">
         <div className="p-6 border-b border-border">
           <h2 className="text-lg font-semibold text-foreground">
@@ -147,40 +227,22 @@ export default function BudgetPage() {
                 <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
                   Remaining
                 </th>
-                <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
-                  Usage
-                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-              {budgetData.map((project) => (
-                <tr key={project.project} className="hover:bg-muted/50">
-                  <td className="px-6 py-4 text-sm font-medium text-foreground">
-                    {project.project}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-medium text-foreground">
-                    ${project.budget.toLocaleString()}
+            <tbody>
+              {budgetData.map((item) => (
+                <tr key={item.project} className="border-b border-border">
+                  <td className="px-6 py-4 text-sm text-foreground">
+                    {item.project}
                   </td>
                   <td className="px-6 py-4 text-sm text-foreground">
-                    ${project.spent.toLocaleString()}
+                    ${item.budget.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 text-sm text-foreground">
-                    ${project.remaining.toLocaleString()}
+                    ${item.spent.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary rounded-full"
-                          style={{
-                            width: `${(project.spent / project.budget) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {Math.round((project.spent / project.budget) * 100)}%
-                      </span>
-                    </div>
+                  <td className="px-6 py-4 text-sm text-foreground">
+                    ${item.remaining.toLocaleString()}
                   </td>
                 </tr>
               ))}

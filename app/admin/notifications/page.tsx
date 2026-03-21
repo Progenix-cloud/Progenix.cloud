@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -14,7 +15,9 @@ export default function AdminNotificationsPage() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const res = await fetch("/api/admin/notifications");
+    const res = await fetch("/api/admin/notifications", {
+      headers: buildAuthHeaders(),
+    });
     const json = await res.json();
     if (json.success) setNotifications(json.data || []);
     setLoading(false);
@@ -34,7 +37,7 @@ export default function AdminNotificationsPage() {
     if (!editingId) return;
     const res = await fetch("/api/admin/notifications", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: buildAuthHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ id: editingId, updates: { title, message } }),
     });
     const json = await res.json();
@@ -49,6 +52,7 @@ export default function AdminNotificationsPage() {
   const del = async (id: string) => {
     await fetch(`/api/admin/notifications?id=${encodeURIComponent(id)}`, {
       method: "DELETE",
+      headers: buildAuthHeaders(),
     });
     fetchAll();
   };

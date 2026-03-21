@@ -1,7 +1,7 @@
 import Carousel from "components/app/testimonials/carousel/carousel";
 import Review from "components/app/testimonials/review/review";
 import CarouselProvider from "@/lib/providers/carousel/carousel-provider";
-import { reviews } from "@/lib/constants/app/testimonials";
+import { reviews } from "@/lib/landing_Data";
 
 const Testimonials = () => {
   return (

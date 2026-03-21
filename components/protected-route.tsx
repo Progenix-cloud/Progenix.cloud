@@ -1,10 +1,11 @@
 'use client';
 
-import React from "react"
+import React from "react";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Spinner } from '@/components/ui/spinner';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
+import { useAuthSession } from "@/lib/hooks/useAuthSession";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,37 +19,23 @@ export function ProtectedRoute({
   redirectTo = '/auth/login',
 }: ProtectedRouteProps) {
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { user, loading, isAuthenticated } = useAuthSession();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/verify');
-        const data = await response.json();
+    if (loading) return;
+    if (!isAuthenticated) {
+      router.push(redirectTo);
+      return;
+    }
+    if (requiredRole && user && !requiredRole.includes(user.role)) {
+      router.push("/unauthorized");
+      return;
+    }
+    setIsAuthorized(true);
+  }, [loading, isAuthenticated, requiredRole, redirectTo, router, user]);
 
-        if (!data.success) {
-          router.push(redirectTo);
-          return;
-        }
-
-        if (requiredRole && !requiredRole.includes(data.user?.role)) {
-          router.push('/unauthorized');
-          return;
-        }
-
-        setIsAuthorized(true);
-      } catch (error) {
-        router.push(redirectTo);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, [requiredRole, redirectTo, router]);
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Spinner />

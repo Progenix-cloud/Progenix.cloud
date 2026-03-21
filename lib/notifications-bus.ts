@@ -35,4 +35,13 @@ export const notificationsBus = {
       }
     }
   },
+  on(event: string, cb: Callback) {
+    const allCb = (data: any) => {
+      if (data.type === event) cb(data);
+    };
+    // Subscribe all users to this event
+    for (const userId of Array.from(subscribers.keys())) {
+      this.subscribe(userId, allCb);
+    }
+  },
 };

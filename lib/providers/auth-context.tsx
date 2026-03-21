@@ -33,18 +33,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const res = await fetch('/api/auth/verify', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        setUser(data.user);
-        console.log('[v0] Auth verified for:', data.user.email);
+        const payload = data?.data || {};
+        setUser(payload.user);
+        if (payload.user?.email) {
+          console.log('[v0] Auth verified for:', payload.user.email);
+        }
       } else {
-        localStorage.removeItem('authToken');
-        setUser(null);
+        const refreshed = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        if (refreshed.ok) {
+          const data = await refreshed.json();
+          const payload = data?.data || {};
+          if (typeof window !== 'undefined') {
+            if (payload.token) {
+              localStorage.setItem('authToken', payload.token);
+            }
+            if (payload.user) {
+              localStorage.setItem('user', JSON.stringify(payload.user));
+            }
+          }
+          setUser(payload.user);
+        } else {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('[v0] Auth check failed:', error);
@@ -69,14 +92,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const data = await res.json();
-      console.log('[v0] Login successful for:', data.user.email);
-      
-      // Store token in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('authToken', data.token);
+      const payload = data?.data || {};
+      if (payload.user?.email) {
+        console.log('[v0] Login successful for:', payload.user.email);
       }
       
-      setUser(data.user);
+      // Store token + user in localStorage
+      if (typeof window !== 'undefined') {
+        if (payload.token) {
+          localStorage.setItem('authToken', payload.token);
+        }
+        if (payload.user) {
+          localStorage.setItem('user', JSON.stringify(payload.user));
+        }
+      }
+      
+      setUser(payload.user);
       return true;
     } catch (error) {
       console.error('[v0] Login error:', error);
@@ -88,7 +119,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+      }
       setUser(null);
       window.location.href = '/auth/login';
     } catch (error) {

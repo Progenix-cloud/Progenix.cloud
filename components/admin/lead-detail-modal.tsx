@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { X } from "lucide-react";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 interface Lead {
   _id: string;
@@ -90,11 +91,11 @@ export default function LeadDetailModal({
       setLoading(true);
       const response = await fetch(`/api/leads/${lead._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: buildAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify(formData),
       });
       const updatedLead = await response.json();
-      onSave(updatedLead);
+      onSave(updatedLead?.data || updatedLead);
     } catch (error) {
       console.error("Error saving lead:", error);
     } finally {

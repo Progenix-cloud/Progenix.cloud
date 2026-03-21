@@ -3,25 +3,10 @@
 import { useState, useEffect } from "react";
 import { motion, useAnimation, useInView } from "framer-motion";
 import { useRef } from "react";
+import {skills} from "../../../lib/landing_Data"
+import { Skill } from "../../../lib/landing_Data";
 
-interface Skill {
-  name: string;
-  level: number;
-  color: string;
-  icon?: string;
-  currentLevel?: number;
-}
 
-const skills: Skill[] = [
-  { name: "React/Next.js", level: 95, color: "from-blue-500 to-cyan-500" },
-  { name: "TypeScript", level: 90, color: "from-blue-600 to-blue-800" },
-  { name: "Node.js", level: 85, color: "from-green-500 to-green-700" },
-  { name: "Python", level: 80, color: "from-yellow-500 to-orange-500" },
-  { name: "AWS/Azure", level: 75, color: "from-purple-500 to-pink-500" },
-  { name: "DevOps", level: 70, color: "from-red-500 to-red-700" },
-  { name: "UI/UX Design", level: 85, color: "from-indigo-500 to-purple-500" },
-  { name: "Database Design", level: 80, color: "from-teal-500 to-blue-500" },
-];
 
 const EnhancedSkillsProgress = () => {
   const [animatedSkills, setAnimatedSkills] = useState<Skill[]>(skills.map(skill => ({ ...skill, currentLevel: 0 })));

@@ -8,28 +8,58 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, MessageSquare } from "lucide-react";
 import { apiService } from "@/lib/api-service";
 
+interface Project {
+  _id: string;
+  name: string;
+  status: string;
+}
+
 interface Message {
   _id: string;
-  projectId: string;
   senderId: string;
   senderName: string;
-  senderRole: string;
   message: string;
-  timestamp: Date;
-  type: string;
+  timestamp: string;
 }
 
 export default function CommunicationPage() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [selectedProject, setSelectedProject] = useState("proj-001");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadMessages = async () => {
-      const data = await apiService.getMessages({ projectId: selectedProject });
-      setMessages(data);
+    const loadProjects = async () => {
+      try {
+        const projectsData = await apiService.getProjects();
+        setProjects(projectsData);
+        if (projectsData.length > 0 && !selectedProject) {
+          setSelectedProject(projectsData[0]._id);
+        }
+      } catch (error) {
+        console.error("Failed to load projects:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-    loadMessages();
+    loadProjects();
+  }, []);
+
+  useEffect(() => {
+    if (selectedProject) {
+      const loadMessages = async () => {
+        try {
+          const data = await apiService.getMessages({
+            projectId: selectedProject,
+          });
+          setMessages(data);
+        } catch (error) {
+          console.error("Failed to load messages:", error);
+        }
+      };
+      loadMessages();
+    }
   }, [selectedProject]);
 
   const handleSendMessage = async () => {
@@ -78,23 +108,33 @@ export default function CommunicationPage() {
           <Card className="p-4">
             <h2 className="font-semibold text-foreground mb-4">Projects</h2>
             <div className="space-y-2">
-              {[
-                { id: "proj-001", name: "E-Commerce" },
-                { id: "proj-002", name: "Mobile App" },
-                { id: "proj-003", name: "Analytics" },
-                { id: "proj-004", name: "Healthcare" },
-              ].map((project) => (
-                <Button
-                  key={project.id}
-                  variant={
-                    selectedProject === project.id ? "default" : "outline"
-                  }
-                  className="w-full justify-start"
-                  onClick={() => setSelectedProject(project.id)}
-                >
-                  {project.name}
-                </Button>
-              ))}
+              {loading ? (
+                <div className="space-y-2">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-10 bg-gray-200 rounded animate-pulse"
+                    ></div>
+                  ))}
+                </div>
+              ) : projects.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No projects available
+                </p>
+              ) : (
+                projects.map((project) => (
+                  <Button
+                    key={project._id}
+                    variant={
+                      selectedProject === project._id ? "default" : "outline"
+                    }
+                    className="w-full justify-start"
+                    onClick={() => setSelectedProject(project._id)}
+                  >
+                    {project.name}
+                  </Button>
+                ))
+              )}
             </div>
           </Card>
         </div>

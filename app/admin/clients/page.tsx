@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import LeadDetailModal from "../../../components/admin/lead-detail-modal";
 import CreateLeadModal from "../../../components/admin/create-lead-modal";
+import { buildAuthHeaders } from "@/lib/client-auth";
 
 interface Lead {
   _id: string;
@@ -93,10 +94,13 @@ export default function ClientsPage() {
       if (statusFilter) params.append("status", statusFilter);
       if (fitScoreFilter) params.append("fitScore", fitScoreFilter);
 
-      const response = await fetch(`/api/leads?${params.toString()}`);
+      const response = await fetch(`/api/leads?${params.toString()}`, {
+        headers: buildAuthHeaders(),
+      });
       const data = await response.json();
-      setLeads(data.leads || []);
-      setFilteredLeads(data.leads || []);
+      const items = data?.data?.items || data?.data || data?.leads || [];
+      setLeads(items);
+      setFilteredLeads(items);
     } catch (error) {
       console.error("Error fetching leads:", error);
     } finally {
@@ -116,7 +120,10 @@ export default function ClientsPage() {
   const handleDeleteLead = async (leadId: string) => {
     if (confirm("Are you sure you want to delete this lead?")) {
       try {
-        await fetch(`/api/leads/${leadId}`, { method: "DELETE" });
+        await fetch(`/api/leads/${leadId}`, {
+          method: "DELETE",
+          headers: buildAuthHeaders(),
+        });
         setLeads(leads.filter((l) => l._id !== leadId));
         setFilteredLeads(filteredLeads.filter((l) => l._id !== leadId));
       } catch (error) {

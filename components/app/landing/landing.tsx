@@ -3,14 +3,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
-import MargeloImage from "public/margelo-logo.svg";
-import ArrowDown from "public/arrow-down.webp";
 import styles from "styles/modules/landing.module.css";
 import {
   companyName,
   taglinePrefixes,
   taglineSuffix,
-} from "@/lib/constants/app/landing";
+  landingImages,
+} from "@/lib/landing_Data";
 
 const Landing = () => {
   const [imageLoaded, setImageLoaded] = useState<boolean>(false);
@@ -126,7 +125,7 @@ const Landing = () => {
       >
         <div className="landing__logo">
           <Image
-            src={MargeloImage}
+            src={landingImages.margeloLogo}
             width={128 / 3}
             height={114 / 3}
             alt="margelo logo"
@@ -144,6 +143,20 @@ const Landing = () => {
         <h2 className="landing__subtitle text-2xl tracking-tight mb-2 lg:text-3xl transition-all duration-500">
           {displayText}, {taglineSuffix}.
         </h2>
+        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          <a
+            href="/auth/register"
+            className="px-6 py-3 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-semibold transition"
+          >
+            Sign up
+          </a>
+          <a
+            href="/auth/login"
+            className="px-6 py-3 rounded-full bg-white/90 hover:bg-white text-black font-semibold transition"
+          >
+            Log in
+          </a>
+        </div>
       </div>
       <div
         className={`flex-grow-0 transition-all duration-1000 pb-10 ${
@@ -152,12 +165,14 @@ const Landing = () => {
       >
         <div className="landing__arrow">
           <Image
-            src={ArrowDown}
+            src={landingImages.arrowDown}
+            width={128}
+            height={71}
             alt="arrow down icon"
             onLoad={handleImageLoaded}
             style={{
               width: "50%",
-              height: "50%",
+              height: "auto",
             }}
           />
         </div>
